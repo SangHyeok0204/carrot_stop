@@ -107,6 +107,20 @@ src/
 └── types/                # TypeScript 타입 정의
 ```
 
+## 📚 문서
+
+### 필수 가이드
+- **[QUICK_START.md](./QUICK_START.md)** - 빠른 시작 가이드 (환경변수 설정, Firebase 설정 등)
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - 배포 가이드 (Vercel, Firebase)
+
+### 개발 참고 문서
+- `docs/ARCHITECTURE.md` - 전체 아키텍처 설계
+- `docs/FOLDER_STRUCTURE.md` - 폴더 구조
+- `docs/FIRESTORE_SCHEMA.md` - 데이터베이스 스키마
+- `docs/API_SPEC.md` - API 명세서
+- `docs/LLM_PROMPT_DESIGN.md` - LLM 프롬프트 설계
+- `docs/BACKGROUND_JOBS.md` - 백그라운드 작업 설계
+
 ## 배포
 
 ### Vercel 배포
@@ -115,6 +129,8 @@ src/
 2. [Vercel](https://vercel.com)에서 프로젝트 import
 3. 환경변수 설정 (Vercel 대시보드)
 4. 배포 완료
+
+자세한 내용은 [DEPLOYMENT.md](./DEPLOYMENT.md) 참조
 
 ### 환경변수 설정 (Vercel)
 

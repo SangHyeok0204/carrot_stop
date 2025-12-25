@@ -45,4 +45,5 @@ ui-debug.log
 # service account key (절대 커밋하지 말 것)
 *-service-account-key.json
 service-account-key.json
+*-firebase-adminsdk-*.json
 

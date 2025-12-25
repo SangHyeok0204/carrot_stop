@@ -23,10 +23,31 @@ export default function LoginPage() {
 
     try {
       const auth = getFirebaseAuth();
-      await signInWithEmailAndPassword(auth, email, password);
-      
-      // 역할에 따라 리다이렉트 (실제로는 API로 사용자 정보 가져와서 처리)
-      router.push('/dashboard');
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const token = await userCredential.user.getIdToken();
+
+      // 역할 확인 후 리다이렉트
+      try {
+        const response = await fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          const role = data.data.role;
+          if (role === 'admin') {
+            router.push('/admin/dashboard');
+          } else {
+            router.push('/campaigns');
+          }
+        } else {
+          router.push('/campaigns');
+        }
+      } catch (error) {
+        router.push('/campaigns');
+      }
     } catch (err: any) {
       setError(err.message || '로그인에 실패했습니다.');
     } finally {

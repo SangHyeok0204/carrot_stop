@@ -60,7 +60,8 @@
 4. "Create new secret key" 클릭
 5. 키 이름 입력 (예: `ad-platform`)
 6. **키 복사** (한 번만 표시되므로 안전하게 보관!)
-   - 형식: `sk-...`로 시작
+   - 형식: `sk-...` 또는 `sk-proj-...`로 시작
+   - 예시: `sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
 
 **참고**: 
 - 무료 크레딧이 제공될 수 있음

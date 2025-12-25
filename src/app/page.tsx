@@ -14,9 +14,29 @@ export default function HomePage() {
     const auth = getFirebaseAuth();
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // 사용자가 로그인되어 있으면 역할에 따라 리다이렉트
-        // 여기서는 대시보드로 이동 (실제로는 역할 확인 후 해당 대시보드로)
-        router.push('/dashboard');
+        // 사용자가 로그인되어 있으면 역할 확인 후 리다이렉트
+        try {
+          const token = await user.getIdToken();
+          const response = await fetch('/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+          const data = await response.json();
+          
+          if (data.success) {
+            const role = data.data.role;
+            if (role === 'admin') {
+              router.push('/admin/dashboard');
+            } else {
+              router.push('/campaigns');
+            }
+          } else {
+            router.push('/campaigns');
+          }
+        } catch (error) {
+          router.push('/campaigns');
+        }
       }
     });
 

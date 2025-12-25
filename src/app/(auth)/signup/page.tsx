@@ -47,7 +47,7 @@ export default function SignupPage() {
         throw new Error('회원가입에 실패했습니다.');
       }
 
-      router.push('/dashboard');
+      router.push('/campaigns');
     } catch (err: any) {
       setError(err.message || '회원가입에 실패했습니다.');
     } finally {
