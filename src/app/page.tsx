@@ -12,7 +12,7 @@ export default function HomePage() {
 
   useEffect(() => {
     const auth = getFirebaseAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         // 사용자가 로그인되어 있으면 역할 확인 후 리다이렉트
         try {
