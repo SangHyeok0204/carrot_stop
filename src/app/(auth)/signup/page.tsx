@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getFirebaseAuth } from '@/lib/firebase/auth';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, deleteUser } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,10 +23,15 @@ export default function SignupPage() {
     setLoading(true);
     setError('');
 
+    let createdUser: any = null;
+
     try {
       const auth = getFirebaseAuth();
+      
+      // Firebase Auth에 사용자 생성
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const token = await userCredential.user.getIdToken();
+      createdUser = userCredential.user;
+      const token = await createdUser.getIdToken();
 
       // API로 사용자 정보 생성
       const response = await fetch('/api/auth/signup', {
@@ -44,12 +49,35 @@ export default function SignupPage() {
       });
 
       if (!response.ok) {
-        throw new Error('회원가입에 실패했습니다.');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || '회원가입에 실패했습니다.');
       }
 
       router.push('/campaigns');
     } catch (err: any) {
-      setError(err.message || '회원가입에 실패했습니다.');
+      // Firebase Auth에 사용자가 생성되었지만 API 호출이 실패한 경우 롤백
+      if (createdUser) {
+        try {
+          await deleteUser(createdUser);
+        } catch (deleteErr) {
+          console.error('Failed to delete user after signup failure:', deleteErr);
+        }
+      }
+
+      // 에러 메시지 처리
+      let errorMessage = '회원가입에 실패했습니다.';
+      
+      if (err.code === 'auth/email-already-in-use') {
+        errorMessage = '이미 사용 중인 이메일입니다. 로그인을 시도해보세요.';
+      } else if (err.code === 'auth/weak-password') {
+        errorMessage = '비밀번호가 너무 약합니다. 더 강한 비밀번호를 사용해주세요.';
+      } else if (err.code === 'auth/invalid-email') {
+        errorMessage = '유효하지 않은 이메일 주소입니다.';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

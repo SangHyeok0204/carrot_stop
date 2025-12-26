@@ -12,12 +12,19 @@ export interface AuthenticatedRequest extends NextRequest {
 
 /**
  * API Route에서 Firebase Auth 토큰을 검증하는 미들웨어
+ * @param request NextRequest 객체
+ * @param options 검증 옵션
+ * @param options.requireUserDocument Firestore 사용자 문서 존재 여부를 확인할지 여부 (기본값: true)
  */
-export async function verifyAuth(request: NextRequest): Promise<{
+export async function verifyAuth(
+  request: NextRequest,
+  options: { requireUserDocument?: boolean } = {}
+): Promise<{
   uid: string;
   email?: string;
-  role: UserRole;
+  role?: UserRole;
 } | null> {
+  const { requireUserDocument = true } = options;
   const authHeader = request.headers.get('authorization');
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -29,6 +36,15 @@ export async function verifyAuth(request: NextRequest): Promise<{
   try {
     const auth = getAdminAuth();
     const decodedToken = await auth.verifyIdToken(token);
+    
+    // 사용자 문서 확인이 필요하지 않은 경우 (회원가입 등)
+    if (!requireUserDocument) {
+      return {
+        uid: decodedToken.uid,
+        email: decodedToken.email,
+        role: undefined,
+      };
+    }
     
     // 사용자 문서에서 역할 가져오기
     const db = (await import('../firebase/admin')).getAdminFirestore();
@@ -68,7 +84,7 @@ export function requireRole(allowedRoles: UserRole[]) {
       );
     }
 
-    if (!allowedRoles.includes(user.role)) {
+    if (!user.role || !allowedRoles.includes(user.role)) {
       return NextResponse.json(
         { success: false, error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } },
         { status: 403 }
@@ -76,7 +92,7 @@ export function requireRole(allowedRoles: UserRole[]) {
     }
 
     // request에 user 정보 추가 (타입 단언 필요)
-    (request as AuthenticatedRequest).user = user;
+    (request as AuthenticatedRequest).user = user as { uid: string; email?: string; role: UserRole };
     return null;
   };
 }
