@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import Image from 'next/image';
 import { CAMPAIGN_STATUS_LABELS } from '@/lib/utils/constants';
 
 export default function CampaignsList() {
@@ -14,6 +15,7 @@ export default function CampaignsList() {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<'admin' | 'advertiser' | 'influencer' | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadCampaigns();
@@ -69,8 +71,31 @@ export default function CampaignsList() {
     }
   };
 
+  const getStatusColor = (status: string) => {
+    const colors: { [key: string]: string } = {
+      'draft': 'bg-gray-500',
+      'pending': 'bg-yellow-500',
+      'open': 'bg-green-500',
+      'in_progress': 'bg-blue-500',
+      'completed': 'bg-purple-500',
+      'cancelled': 'bg-red-500',
+    };
+    return colors[status] || 'bg-gray-500';
+  };
+
+  const filteredCampaigns = campaigns.filter((campaign) =>
+    campaign.title?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (loading) {
-    return <div className="container mx-auto py-8">로딩 중...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">로딩 중...</p>
+        </div>
+      </div>
+    );
   }
 
   // Admin: 모든 캠페인 관리
