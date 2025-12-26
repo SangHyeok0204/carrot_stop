@@ -101,30 +101,64 @@ export default function CampaignsList() {
   // Admin: 모든 캠페인 관리
   if (userRole === 'admin') {
     return (
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-6">캠페인 관리</h1>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold mb-2">캠페인 관리</h1>
+            <p className="text-muted-foreground">모든 캠페인을 관리하고 모니터링하세요</p>
+          </div>
 
-        <div className="grid gap-4">
-          {campaigns.map((campaign) => (
-            <Card key={campaign.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>{campaign.title}</CardTitle>
-                    <CardDescription>
-                      ID: {campaign.id} | 생성일: {new Date(campaign.createdAt).toLocaleDateString('ko-KR')}
-                    </CardDescription>
-                  </div>
-                  <Badge>{CAMPAIGN_STATUS_LABELS[campaign.status] || campaign.status}</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Button asChild variant="outline">
-                  <Link href={`/admin/campaigns/${campaign.id}`}>상세 보기</Link>
-                </Button>
+          {/* Search */}
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="캠페인 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full max-w-md px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+
+          {/* Campaigns Grid */}
+          {filteredCampaigns.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-muted-foreground">
+                  {searchQuery ? '검색 결과가 없습니다.' : '캠페인이 없습니다.'}
+                </p>
               </CardContent>
             </Card>
-          ))}
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCampaigns.map((campaign) => (
+                <Card key={campaign.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
+                  <div className="relative h-48 bg-gradient-to-br from-primary/20 to-primary/5">
+                    {/* 이미지 자리 - 추후 추가 가능 */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-4xl font-bold text-primary/30">{campaign.title?.[0] || 'C'}</div>
+                    </div>
+                    <Badge className={`absolute top-4 right-4 ${getStatusColor(campaign.status)} text-white`}>
+                      {CAMPAIGN_STATUS_LABELS[campaign.status] || campaign.status}
+                    </Badge>
+                  </div>
+                  <CardHeader>
+                    <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors">
+                      {campaign.title || '제목 없음'}
+                    </CardTitle>
+                    <CardDescription>
+                      생성일: {new Date(campaign.createdAt).toLocaleDateString('ko-KR')}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button asChild className="w-full" variant="outline">
+                      <Link href={`/admin/campaigns/${campaign.id}`}>상세 보기</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -133,49 +167,83 @@ export default function CampaignsList() {
   // Advertiser: 내 캠페인
   if (userRole === 'advertiser') {
     return (
-      <div className="container mx-auto py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">내 캠페인</h1>
-          <Button asChild>
-            <Link href="/campaigns/new">새 캠페인 만들기</Link>
-          </Button>
-        </div>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold mb-2">내 캠페인</h1>
+              <p className="text-muted-foreground">내가 만든 캠페인을 관리하세요</p>
+            </div>
+            <Button asChild size="lg">
+              <Link href="/campaigns/new">+ 새 캠페인 만들기</Link>
+            </Button>
+          </div>
 
-        {campaigns.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground mb-4">아직 생성된 캠페인이 없습니다.</p>
-              <Button asChild>
-                <Link href="/campaigns/new">첫 캠페인 만들기</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4">
-            {campaigns.map((campaign) => (
-              <Card key={campaign.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>
-                        <Link
-                          href={`/campaigns/${campaign.id}`}
-                          className="hover:underline"
-                        >
-                          {campaign.title}
-                        </Link>
+          {/* Search */}
+          {campaigns.length > 0 && (
+            <div className="mb-6">
+              <input
+                type="text"
+                placeholder="캠페인 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full max-w-md px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+          )}
+
+          {/* Empty State */}
+          {filteredCampaigns.length === 0 && campaigns.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="py-16 text-center">
+                <div className="mb-6">
+                  <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center mb-4">
+                    <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">아직 생성된 캠페인이 없습니다</h3>
+                  <p className="text-muted-foreground mb-6">첫 번째 캠페인을 만들어보세요</p>
+                </div>
+                <Button asChild size="lg">
+                  <Link href="/campaigns/new">첫 캠페인 만들기</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : filteredCampaigns.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-muted-foreground">검색 결과가 없습니다.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCampaigns.map((campaign) => (
+                <Card key={campaign.id} className="overflow-hidden hover:shadow-lg transition-all duration-300 group cursor-pointer">
+                  <Link href={`/campaigns/${campaign.id}`}>
+                    <div className="relative h-48 bg-gradient-to-br from-primary/20 to-primary/5">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-4xl font-bold text-primary/30">{campaign.title?.[0] || 'C'}</div>
+                      </div>
+                      <Badge className={`absolute top-4 right-4 ${getStatusColor(campaign.status)} text-white`}>
+                        {CAMPAIGN_STATUS_LABELS[campaign.status] || campaign.status}
+                      </Badge>
+                    </div>
+                    <CardHeader>
+                      <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors">
+                        {campaign.title || '제목 없음'}
                       </CardTitle>
                       <CardDescription>
                         생성일: {new Date(campaign.createdAt).toLocaleDateString('ko-KR')}
                       </CardDescription>
-                    </div>
-                    <Badge>{CAMPAIGN_STATUS_LABELS[campaign.status] || campaign.status}</Badge>
-                  </div>
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
-        )}
+                    </CardHeader>
+                  </Link>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -183,37 +251,83 @@ export default function CampaignsList() {
   // Influencer: 오픈 캠페인
   if (userRole === 'influencer') {
     return (
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-6">오픈 캠페인</h1>
-
-        {campaigns.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">현재 오픈된 캠페인이 없습니다.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4">
-            {campaigns.map((campaign) => (
-              <Card key={campaign.id}>
-                <CardHeader>
-                  <CardTitle>{campaign.title}</CardTitle>
-                  <CardDescription>
-                    오픈일: {new Date(campaign.openedAt).toLocaleDateString('ko-KR')}
-                    {campaign.deadlineDate && (
-                      <> | 마감일: {new Date(campaign.deadlineDate).toLocaleDateString('ko-KR')}</>
-                    )}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button asChild>
-                    <Link href={`/campaigns/${campaign.id}`}>상세 보기</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold mb-2">오픈 캠페인</h1>
+            <p className="text-muted-foreground">지원 가능한 캠페인을 탐색하세요</p>
           </div>
-        )}
+
+          {/* Search */}
+          {campaigns.length > 0 && (
+            <div className="mb-6">
+              <input
+                type="text"
+                placeholder="캠페인 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full max-w-md px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+          )}
+
+          {/* Empty State */}
+          {filteredCampaigns.length === 0 && campaigns.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="py-16 text-center">
+                <div className="mb-6">
+                  <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center mb-4">
+                    <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">현재 오픈된 캠페인이 없습니다</h3>
+                  <p className="text-muted-foreground">새로운 캠페인이 오픈되면 여기에 표시됩니다</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : filteredCampaigns.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-muted-foreground">검색 결과가 없습니다.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCampaigns.map((campaign) => (
+                <Card key={campaign.id} className="overflow-hidden hover:shadow-lg transition-all duration-300 group">
+                  <div className="relative h-48 bg-gradient-to-br from-primary/20 to-primary/5">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-4xl font-bold text-primary/30">{campaign.title?.[0] || 'C'}</div>
+                    </div>
+                    <Badge className={`absolute top-4 right-4 ${getStatusColor(campaign.status)} text-white`}>
+                      {CAMPAIGN_STATUS_LABELS[campaign.status] || campaign.status}
+                    </Badge>
+                  </div>
+                  <CardHeader>
+                    <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors">
+                      {campaign.title || '제목 없음'}
+                    </CardTitle>
+                    <CardDescription>
+                      <div className="space-y-1">
+                        <div>오픈일: {new Date(campaign.openedAt).toLocaleDateString('ko-KR')}</div>
+                        {campaign.deadlineDate && (
+                          <div>마감일: {new Date(campaign.deadlineDate).toLocaleDateString('ko-KR')}</div>
+                        )}
+                      </div>
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button asChild className="w-full">
+                      <Link href={`/campaigns/${campaign.id}`}>상세 보기</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
