@@ -66,7 +66,7 @@ export async function generateCampaignSpec(
 
       // 마지막 시도가 아니면 재시도
       if (attempt < MAX_RETRIES) {
-        console.warn(`LLM generation attempt ${attempt + 1} failed, retrying...`, error);
+        console.warn(`LLM generation attempt ${attempt + 1} failed, retrying... Error: ${error?.message || 'Unknown error'}`);
         continue;
       }
     }
