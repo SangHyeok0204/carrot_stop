@@ -36,17 +36,13 @@ export default function LoginPage() {
         const data = await response.json();
         
         if (data.success) {
-          const role = data.data.role;
-          if (role === 'admin') {
-            router.push('/admin/dashboard');
-          } else {
-            router.push('/campaigns');
-          }
+          // 로그인 후 /feed로 리다이렉트
+          router.push('/feed');
         } else {
-          router.push('/campaigns');
+          router.push('/feed');
         }
       } catch (error) {
-        router.push('/campaigns');
+        router.push('/feed');
       }
     } catch (err: any) {
       setError(err.message || '로그인에 실패했습니다.');

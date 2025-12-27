@@ -7,6 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
+import AnimatedCharacter from '@/components/AnimatedCharacter';
 
 export default function HomePage() {
   const router = useRouter();
@@ -31,17 +32,13 @@ export default function HomePage() {
           const data = await response.json();
           
           if (data.success) {
-            const role = data.data.role;
-            if (role === 'admin') {
-              router.push('/admin/dashboard');
-            } else {
-              router.push('/campaigns');
-            }
+            // 로그인된 사용자는 /feed로 리다이렉트
+            router.push('/feed');
           } else {
-            router.push('/campaigns');
+            router.push('/feed');
           }
         } catch (error) {
-          router.push('/campaigns');
+          router.push('/feed');
         }
       }
     });
@@ -93,6 +90,13 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
+      {/* 움직이는 캐릭터 */}
+      <AnimatedCharacter 
+        size="lg"
+        interactive={true}
+        scrollBased={false}
+      />
+      
       {/* Hero Section - 풀스크린 이미지 */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* 배경 이미지 */}
