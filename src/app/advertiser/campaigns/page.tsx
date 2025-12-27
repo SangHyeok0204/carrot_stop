@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getFirebaseAuth } from '@/lib/firebase/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { CAMPAIGN_STATUS_LABELS } from '@/lib/utils/constants';
 
-export default function InfluencerCampaignsPage() {
+export default function CampaignsPage() {
   const router = useRouter();
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,12 +23,12 @@ export default function InfluencerCampaignsPage() {
       const auth = getFirebaseAuth();
       const user = auth.currentUser;
       if (!user) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 
       const token = await user.getIdToken();
-      const response = await fetch('/api/campaigns/open', {
+      const response = await fetch('/api/campaigns', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -49,12 +51,20 @@ export default function InfluencerCampaignsPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">오픈 캠페인</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">내 캠페인</h1>
+        <Button asChild>
+          <Link href="/advertiser/campaigns/new">새 캠페인 만들기</Link>
+        </Button>
+      </div>
 
       {campaigns.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">현재 오픈된 캠페인이 없습니다.</p>
+            <p className="text-muted-foreground mb-4">아직 생성된 캠페인이 없습니다.</p>
+            <Button asChild>
+              <Link href="/advertiser/campaigns/new">첫 캠페인 만들기</Link>
+            </Button>
           </CardContent>
         </Card>
       ) : (
@@ -62,19 +72,23 @@ export default function InfluencerCampaignsPage() {
           {campaigns.map((campaign) => (
             <Card key={campaign.id}>
               <CardHeader>
-                <CardTitle>{campaign.title}</CardTitle>
-                <CardDescription>
-                  오픈일: {new Date(campaign.openedAt).toLocaleDateString('ko-KR')}
-                  {campaign.deadlineDate && (
-                    <> | 마감일: {new Date(campaign.deadlineDate).toLocaleDateString('ko-KR')}</>
-                  )}
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>
+                      <Link
+                        href={`/advertiser/campaigns/${campaign.id}`}
+                        className="hover:underline"
+                      >
+                        {campaign.title}
+                      </Link>
+                    </CardTitle>
+                    <CardDescription>
+                      생성일: {new Date(campaign.createdAt).toLocaleDateString('ko-KR')}
+                    </CardDescription>
+                  </div>
+                  <Badge>{CAMPAIGN_STATUS_LABELS[campaign.status] || campaign.status}</Badge>
+                </div>
               </CardHeader>
-              <CardContent>
-                <Button asChild>
-                  <Link href={`/campaigns/${campaign.id}`}>상세 보기</Link>
-                </Button>
-              </CardContent>
             </Card>
           ))}
         </div>

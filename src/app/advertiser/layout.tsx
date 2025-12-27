@@ -7,7 +7,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
-export default function InfluencerLayout({
+export default function AdvertiserLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -20,10 +20,11 @@ export default function InfluencerLayout({
     const auth = getFirebaseAuth();
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 
+      // 사용자 정보 가져오기
       try {
         const token = await firebaseUser.getIdToken();
         const response = await fetch('/api/auth/me', {
@@ -32,13 +33,13 @@ export default function InfluencerLayout({
           },
         });
         const data = await response.json();
-        if (data.success && data.data.role === 'influencer') {
+        if (data.success && data.data.role === 'advertiser') {
           setUser(data.data);
         } else {
-          router.push('/login');
+          router.push('/auth/login');
         }
       } catch (error) {
-        router.push('/login');
+        router.push('/auth/login');
       }
     });
 
@@ -48,7 +49,7 @@ export default function InfluencerLayout({
   const handleLogout = async () => {
     const auth = getFirebaseAuth();
     await signOut(auth);
-    router.push('/login');
+    router.push('/auth/login');
   };
 
   if (!user) {
@@ -60,15 +61,23 @@ export default function InfluencerLayout({
       <nav className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link href="/campaigns" className="font-bold text-xl">
+            <Link href="/advertiser/campaigns" className="font-bold text-xl">
               AI 광고 플랫폼
             </Link>
-            <Link
-              href="/campaigns"
-              className={pathname?.includes('/campaigns') ? 'font-semibold' : ''}
-            >
-              캠페인 탐색
-            </Link>
+            <div className="flex gap-4">
+              <Link
+                href="/advertiser/campaigns"
+                className={`${pathname?.includes('/advertiser/campaigns') && !pathname?.includes('/advertiser/campaigns/new') ? 'font-semibold' : ''}`}
+              >
+                캠페인
+              </Link>
+              <Link
+                href="/advertiser/campaigns/new"
+                className={`${pathname?.includes('/advertiser/campaigns/new') ? 'font-semibold' : ''}`}
+              >
+                새 캠페인
+              </Link>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">{user.displayName || user.email}</span>

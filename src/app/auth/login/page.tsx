@@ -39,14 +39,14 @@ export default function LoginPage() {
           const role = data.data.role;
           if (role === 'admin') {
             router.push('/admin/dashboard');
-          } else {
-            router.push('/campaigns');
+          } else if (role === 'advertiser') {
+            router.push('/advertiser/campaigns');
+          } else if (role === 'influencer') {
+            router.push('/influencer/campaigns');
           }
-        } else {
-          router.push('/campaigns');
         }
       } catch (error) {
-        router.push('/campaigns');
+        console.error('Failed to fetch user role:', error);
       }
     } catch (err: any) {
       setError(err.message || '로그인에 실패했습니다.');
@@ -91,7 +91,7 @@ export default function LoginPage() {
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             계정이 없으신가요?{' '}
-            <Link href="/signup" className="text-primary hover:underline">
+            <Link href="/auth/signup" className="text-primary hover:underline">
               회원가입
             </Link>
           </p>

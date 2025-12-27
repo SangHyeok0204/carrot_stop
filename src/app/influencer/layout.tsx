@@ -7,7 +7,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
-export default function AdminLayout({
+export default function InfluencerLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -20,7 +20,7 @@ export default function AdminLayout({
     const auth = getFirebaseAuth();
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 
@@ -32,13 +32,13 @@ export default function AdminLayout({
           },
         });
         const data = await response.json();
-        if (data.success && data.data.role === 'admin') {
+        if (data.success && data.data.role === 'influencer') {
           setUser(data.data);
         } else {
-          router.push('/login');
+          router.push('/auth/login');
         }
       } catch (error) {
-        router.push('/login');
+        router.push('/auth/login');
       }
     });
 
@@ -48,7 +48,7 @@ export default function AdminLayout({
   const handleLogout = async () => {
     const auth = getFirebaseAuth();
     await signOut(auth);
-    router.push('/login');
+    router.push('/auth/login');
   };
 
   if (!user) {
@@ -57,26 +57,18 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen">
-      <nav className="border-b bg-red-50">
+      <nav className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link href="/admin/dashboard" className="font-bold text-xl">
-              관리자 대시보드
+            <Link href="/influencer/campaigns" className="font-bold text-xl">
+              AI 광고 플랫폼
             </Link>
-            <div className="flex gap-4">
-              <Link
-                href="/admin/dashboard"
-                className={pathname === '/admin/dashboard' ? 'font-semibold' : ''}
-              >
-                대시보드
-              </Link>
-              <Link
-                href="/admin/campaigns"
-                className={pathname?.includes('/admin/campaigns') ? 'font-semibold' : ''}
-              >
-                캠페인 관리
-              </Link>
-            </div>
+            <Link
+              href="/influencer/campaigns"
+              className={pathname?.includes('/influencer/campaigns') ? 'font-semibold' : ''}
+            >
+              캠페인 탐색
+            </Link>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">{user.displayName || user.email}</span>

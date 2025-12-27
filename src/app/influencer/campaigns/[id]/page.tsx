@@ -24,7 +24,7 @@ export default function InfluencerCampaignDetailPage() {
       const auth = getFirebaseAuth();
       const user = auth.currentUser;
       if (!user) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 

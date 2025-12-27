@@ -24,7 +24,7 @@ export default function CampaignDetailPage() {
       const auth = getFirebaseAuth();
       const user = auth.currentUser;
       if (!user) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 
@@ -91,7 +91,7 @@ export default function CampaignDetailPage() {
               </CardDescription>
             </div>
             {campaign.status === 'GENERATED' && (
-              <Button onClick={() => router.push(`/campaigns/${campaignId}/review`)}>
+              <Button onClick={() => router.push(`/advertiser/campaigns/${campaignId}/review`)}>
                 검토하기
               </Button>
             )}

@@ -23,7 +23,7 @@ export default function AdminCampaignsPage() {
       const auth = getFirebaseAuth();
       const user = auth.currentUser;
       if (!user) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 

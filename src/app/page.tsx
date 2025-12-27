@@ -12,7 +12,7 @@ export default function HomePage() {
 
   useEffect(() => {
     const auth = getFirebaseAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         // 사용자가 로그인되어 있으면 역할 확인 후 리다이렉트
         try {
@@ -28,14 +28,14 @@ export default function HomePage() {
             const role = data.data.role;
             if (role === 'admin') {
               router.push('/admin/dashboard');
-            } else {
-              router.push('/campaigns');
+            } else if (role === 'advertiser') {
+              router.push('/advertiser/campaigns');
+            } else if (role === 'influencer') {
+              router.push('/influencer/campaigns');
             }
-          } else {
-            router.push('/campaigns');
           }
         } catch (error) {
-          router.push('/campaigns');
+          console.error('Auth error:', error);
         }
       }
     });
@@ -54,10 +54,10 @@ export default function HomePage() {
         </p>
         <div className="flex gap-4 justify-center">
           <Button asChild size="lg">
-            <Link href="/login">로그인</Link>
+            <Link href="/auth/login">로그인</Link>
           </Button>
           <Button asChild variant="outline" size="lg">
-            <Link href="/signup">회원가입</Link>
+            <Link href="/auth/signup">회원가입</Link>
           </Button>
         </div>
       </div>

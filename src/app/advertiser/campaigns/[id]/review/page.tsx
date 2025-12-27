@@ -25,7 +25,7 @@ export default function ReviewCampaignPage() {
       const auth = getFirebaseAuth();
       const user = auth.currentUser;
       if (!user) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 
@@ -66,7 +66,7 @@ export default function ReviewCampaignPage() {
 
       const data = await response.json();
       if (data.success) {
-        router.push(`/campaigns/${campaignId}`);
+        router.push(`/advertiser/campaigns/${campaignId}`);
       }
     } catch (error) {
       console.error('Approve error:', error);
@@ -125,7 +125,7 @@ export default function ReviewCampaignPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => router.push(`/campaigns/${campaignId}`)}
+              onClick={() => router.push(`/advertiser/campaigns/${campaignId}`)}
             >
               나중에
             </Button>
