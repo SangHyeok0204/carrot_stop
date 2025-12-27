@@ -38,22 +38,69 @@ export function getUserPrompt(naturalLanguageInput: string): string {
    - 단일 선택 또는 복수 선택 형식
    - 광고주가 쉽게 답할 수 있는 구체적인 선택지 제공
 
-응답은 반드시 다음 JSON 형식으로 반환해야 합니다:
+응답은 반드시 다음 JSON 형식으로 반환해야 합니다 (모든 필드 필수):
 {
-  "proposalMarkdown": "...",
+  "proposalMarkdown": "# 캠페인 제안서\n\n## 목표\n...(최소 500자 이상의 상세한 마크다운 제안서)...",
   "specJson": {
-    "objective": "...",
-    "target_audience": { ... },
-    "tone_and_mood": [ ... ],
-    "recommended_content_types": [ ... ],
-    "schedule": { ... },
-    "budget_range": { ... },
-    "kpis": { ... },
-    "constraints": { ... },
-    "risk_flags": [ ... ],
-    "clarification_questions": [ ... ]
+    "objective": "캠페인의 명확한 목표 (20-500자)",
+    "target_audience": {
+      "demographics": "20-30대 여성, 직장인",
+      "interests": ["뷰티", "패션", "라이프스타일"],
+      "behaviors": ["온라인 쇼핑 선호", "SNS 활발 사용"]
+    },
+    "tone_and_mood": ["밝은", "친근한", "트렌디"],
+    "recommended_content_types": [
+      {
+        "platform": "Instagram",
+        "format": "릴스",
+        "rationale": "20대 여성 타겟에 적합한 숏폼 콘텐츠"
+      }
+    ],
+    "schedule": {
+      "estimated_duration_days": 30,
+      "milestones": [
+        {"phase": "인플루언서 섭외", "days_from_start": 0},
+        {"phase": "콘텐츠 제작", "days_from_start": 7},
+        {"phase": "콘텐츠 업로드", "days_from_start": 14}
+      ]
+    },
+    "budget_range": {
+      "min": 1000000,
+      "max": 3000000,
+      "currency": "KRW",
+      "rationale": "중소규모 캠페인 기준, 인플루언서 3-5명 협업 예상"
+    },
+    "kpis": {
+      "guaranteed": [
+        {"metric": "총 조회수", "value": 50000}
+      ],
+      "target": [
+        {"metric": "댓글 수", "value": 500}
+      ]
+    },
+    "constraints": {
+      "must_have": ["브랜드 로고 노출", "제품 사용 장면"],
+      "must_not": ["경쟁사 언급", "과장 표현"]
+    },
+    "risk_flags": [
+      {
+        "level": "low",
+        "description": "시즌 영향으로 참여율 변동 가능",
+        "mitigation": "유연한 일정 조정"
+      }
+    ],
+    "clarification_questions": [
+      {
+        "question": "주요 홍보하고 싶은 제품의 특장점은 무엇인가요?",
+        "type": "single_choice",
+        "options": ["가성비", "품질", "디자인", "기능성"],
+        "required": true
+      }
+    ]
   }
-}`;
+}
+
+중요: 위 예시의 모든 필드를 반드시 포함하고, specJson의 각 필드는 정확한 타입을 유지해야 합니다.`;
 }
 
 export function getRetryPrompt(errorMessage: string, originalInput: string): string {

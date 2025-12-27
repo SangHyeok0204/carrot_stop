@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getFirebaseAuth } from '@/lib/firebase/auth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import ReactMarkdown from 'react-markdown';
 
@@ -125,7 +125,7 @@ export default function ReviewCampaignPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => router.push(`/campaigns/${campaignId}`)}
+              onClick={() => router.push('/campaigns')}
             >
               나중에
             </Button>
