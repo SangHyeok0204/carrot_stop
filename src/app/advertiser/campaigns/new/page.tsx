@@ -44,7 +44,7 @@ export default function NewCampaignPage() {
         throw new Error(data.error?.message || '캠페인 생성에 실패했습니다.');
       }
 
-      router.push(`/campaigns/${data.data.campaignId}/review`);
+      router.push(`/advertiser/campaigns/${data.data.campaignId}/review`);
     } catch (err: any) {
       setError(err.message || '캠페인 생성에 실패했습니다.');
     } finally {

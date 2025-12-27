@@ -32,13 +32,17 @@ export default function HomePage() {
           const data = await response.json();
           
           if (data.success) {
-            // 로그인된 사용자는 /feed로 리다이렉트
-            router.push('/feed');
-          } else {
-            router.push('/feed');
+            const role = data.data.role;
+            if (role === 'admin') {
+              router.push('/admin/dashboard');
+            } else if (role === 'advertiser') {
+              router.push('/advertiser/campaigns');
+            } else if (role === 'influencer') {
+              router.push('/influencer/campaigns');
+            }
           }
         } catch (error) {
-          router.push('/feed');
+          console.error('Auth error:', error);
         }
       }
     });

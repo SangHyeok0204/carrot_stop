@@ -53,7 +53,12 @@ export default function SignupPage() {
         throw new Error(errorData.error?.message || '회원가입에 실패했습니다.');
       }
 
-      router.push('/campaigns');
+      // 역할에 따라 리다이렉트
+      if (role === 'advertiser') {
+        router.push('/advertiser/campaigns');
+      } else if (role === 'influencer') {
+        router.push('/influencer/campaigns');
+      }
     } catch (err: any) {
       // Firebase Auth에 사용자가 생성되었지만 API 호출이 실패한 경우 롤백
       if (createdUser) {
@@ -139,7 +144,7 @@ export default function SignupPage() {
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             이미 계정이 있으신가요?{' '}
-            <Link href="/login" className="text-primary hover:underline">
+            <Link href="/auth/login" className="text-primary hover:underline">
               로그인
             </Link>
           </p>

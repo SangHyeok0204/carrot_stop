@@ -28,7 +28,7 @@
 - npm 또는 yarn
 - Firebase 프로젝트
 - OpenAI API 키
-
+- 인내심
 ### 2. Firebase 설정
 
 1. [Firebase Console](https://console.firebase.google.com/)에서 새 프로젝트 생성
