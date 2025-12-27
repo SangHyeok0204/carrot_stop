@@ -6,7 +6,8 @@ import { UserRole } from '@/types';
 export async function POST(request: NextRequest) {
   try {
     // 인증된 사용자 확인 (클라이언트에서 이미 생성됨)
-    const user = await verifyAuth(request);
+    // 회원가입 시점에는 Firestore에 사용자 문서가 아직 없으므로 requireUserDocument: false
+    const user = await verifyAuth(request, { requireUserDocument: false });
     
     if (!user) {
       return NextResponse.json(
