@@ -32,7 +32,11 @@
 ### 2. Firebase 설정
 
 1. [Firebase Console](https://console.firebase.google.com/)에서 새 프로젝트 생성
-2. Authentication 활성화 (Email/Password)
+2. Authentication 활성화
+   - **Email/Password** 제공업체 활성화
+   - **Google** 제공업체 활성화
+     - 프로젝트 지원 이메일 설정
+     - 승인된 도메인에 `localhost` 추가 (개발용)
 3. Firestore Database 생성
 4. Storage 활성화
 5. 서비스 계정 키 생성:
@@ -65,7 +69,13 @@ CRON_SECRET=your-random-secret-key-here
 
 # App Config
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# 환경 설정 (선택사항)
+# development, staging, production
+NEXT_PUBLIC_APP_ENV=development
 ```
+
+**참고:** `env.example.txt` 파일에 더 자세한 설정 예시가 있습니다.
 
 ### 4. Firestore 보안 규칙 배포
 
@@ -147,6 +157,14 @@ src/
 
 ## 주요 기능
 
+### 🔐 인증 시스템
+
+- **이메일/비밀번호 로그인**: 전통적인 회원가입 방식
+- **Google 소셜 로그인**: 원클릭 간편 가입/로그인
+- **2단계 역할 선택**: 광고주/인플루언서 역할 선택 및 추가 정보 입력
+- **이메일 중복 방지**: 같은 이메일로 다른 방법 가입 차단
+- **카카오/네이버 로그인**: 준비 중 (UI 구현 완료)
+
 ### 광고주
 
 1. 자연어로 캠페인 요청 입력
@@ -171,6 +189,20 @@ src/
 3. 페널티 적용
 4. 분쟁 처리
 5. 리포트 확인
+
+## 🔧 최근 업데이트 (2024-12-29)
+
+### Google 소셜 로그인 추가
+
+- **Google 로그인**: 원클릭으로 간편하게 가입/로그인
+- **2단계 역할 선택**: 
+  - 광고주: 회사명 입력
+  - 인플루언서: 활동명(닉네임) 입력
+- **이메일 중복 방지**: 같은 이메일로 다른 방법 가입 차단
+- **확장 가능한 구조**: 추가 정보 입력 필드 쉽게 확장 가능
+- **카카오/네이버 UI 준비**: 버튼 배치 완료 (기능 구현 예정)
+
+자세한 내용은 `20251229수정.txt` 파일 참조
 
 ## 라이선스
 
