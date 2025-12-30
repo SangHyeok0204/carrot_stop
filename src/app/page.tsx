@@ -32,13 +32,17 @@ export default function HomePage() {
           const data = await response.json();
           
           if (data.success) {
-            // 로그인된 사용자는 /feed로 리다이렉트
-            router.push('/feed');
-          } else {
-            router.push('/feed');
+            const role = data.data.role;
+            if (role === 'admin') {
+              router.push('/admin/dashboard');
+            } else if (role === 'advertiser') {
+              router.push('/advertiser/campaigns');
+            } else if (role === 'influencer') {
+              router.push('/influencer/campaigns');
+            }
           }
         } catch (error) {
-          router.push('/feed');
+          console.error('Auth error:', error);
         }
       }
     });
@@ -149,14 +153,14 @@ export default function HomePage() {
               isVisible['hero-cta'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
             }`}
           >
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild size="lg" className="text-lg px-8 py-6 bg-white text-primary hover:bg-white/90 shadow-2xl">
-                <Link href="/signup">무료 체험 시작</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6 border-2 border-white text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm shadow-2xl">
-                <Link href="/login">로그인</Link>
-              </Button>
-            </div>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button asChild size="lg" className="text-lg px-8 py-6 bg-white text-primary hover:bg-white/90 shadow-2xl">
+              <Link href="/auth/signup">무료 체험 시작</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6 border-2 border-white text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm shadow-2xl">
+              <Link href="/auth/login">로그인</Link>
+            </Button>
+          </div>
           </div>
         </div>
       </section>
@@ -388,7 +392,7 @@ export default function HomePage() {
 
           <div className="text-center mt-12">
             <Button asChild size="lg" className="text-lg px-8 py-6">
-              <Link href="/signup">시작하기</Link>
+              <Link href="/auth/signup">시작하기</Link>
             </Button>
           </div>
         </div>
@@ -417,10 +421,10 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="text-lg px-8 py-6 bg-white text-primary hover:bg-white/90 shadow-2xl">
-              <Link href="/signup">무료로 시작하기</Link>
+              <Link href="/auth/signup">무료로 시작하기</Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6 border-2 border-white text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm shadow-2xl">
-              <Link href="/login">로그인</Link>
+              <Link href="/auth/login">로그인</Link>
             </Button>
           </div>
         </div>

@@ -20,7 +20,7 @@ export default function AdminLayout({
     const auth = getFirebaseAuth();
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 
@@ -35,10 +35,10 @@ export default function AdminLayout({
         if (data.success && data.data.role === 'admin') {
           setUser(data.data);
         } else {
-          router.push('/login');
+          router.push('/auth/login');
         }
       } catch (error) {
-        router.push('/login');
+        router.push('/auth/login');
       }
     });
 
@@ -48,7 +48,7 @@ export default function AdminLayout({
   const handleLogout = async () => {
     const auth = getFirebaseAuth();
     await signOut(auth);
-    router.push('/login');
+    router.push('/auth/login');
   };
 
   if (!user) {
