@@ -4,280 +4,370 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getFirebaseAuth } from '@/lib/firebase/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CAMPAIGN_STATUS_LABELS, APPLICATION_STATUS_LABELS } from '@/lib/utils/constants';
+import { StatusBadge } from '@/components/StatusBadge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, Users, FileText, CheckCircle } from 'lucide-react';
+import Link from 'next/link';
 
-export default function CampaignDetailPage() {
+interface Campaign {
+  id: string;
+  title: string;
+  status: 'recruiting' | 'inProgress' | 'completed' | 'pending';
+  budget: string;
+  duration: string;
+  channel: string;
+  naturalLanguageInput?: string;
+  proposal?: any;
+  applications?: Application[];
+  createdAt: string;
+}
+
+interface Application {
+  id: string;
+  influencerId: string;
+  influencer: {
+    displayName: string;
+    email: string;
+  };
+  message: string;
+  contentType: string;
+  estimatedDate: string;
+  status: 'applied' | 'underReview' | 'selected' | 'rejected';
+  createdAt: string;
+}
+
+export default function AdvertiserCampaignDetailPage() {
   const params = useParams();
   const router = useRouter();
   const campaignId = params.id as string;
-  const [campaign, setCampaign] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
-  const [applying, setApplying] = useState(false);
 
   useEffect(() => {
-    loadData();
+    loadCampaign();
   }, [campaignId]);
 
-  const loadData = async () => {
+  const loadCampaign = async () => {
     try {
       const auth = getFirebaseAuth();
-<<<<<<<< HEAD:src/app/advertiser/campaigns/[id]/page.tsx
       const user = auth.currentUser;
       if (!user) {
         router.push('/auth/login');
-========
-      const firebaseUser = auth.currentUser;
-      if (!firebaseUser) {
-        router.push('/login');
->>>>>>>> f5ed8b9c2005c3e69be8b0f6c4c61b3552220f51:src/app/campaigns/[id]/page.tsx
         return;
       }
 
-      const token = await firebaseUser.getIdToken();
-      
-      // 사용자 정보 로드
-      const userResponse = await fetch('/api/auth/me', {
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/campaigns/${campaignId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      const userData = await userResponse.json();
-      if (userData.success) {
-        setUser(userData.data);
-      }
 
-      // 캠페인 정보 로드
-      const campaignResponse = await fetch(`/api/campaigns/${campaignId}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      const campaignData = await campaignResponse.json();
-      if (campaignData.success) {
-        setCampaign(campaignData.data);
+      const data = await response.json();
+      if (data.success) {
+        setCampaign(data.data);
       }
     } catch (error) {
-      console.error('Load data error:', error);
+      console.error('Load campaign error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApply = async () => {
-    setApplying(true);
+  const handleSelectInfluencer = async (applicationId: string) => {
     try {
       const auth = getFirebaseAuth();
-      const firebaseUser = auth.currentUser;
-      if (!firebaseUser) return;
+      const user = auth.currentUser;
+      if (!user) return;
 
-      const token = await firebaseUser.getIdToken();
-      const response = await fetch(`/api/campaigns/${campaignId}/applications`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ message: '' }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        alert('지원이 완료되었습니다.');
-        loadData();
-      } else {
-        alert(data.error?.message || '지원에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('Apply error:', error);
-      alert('지원에 실패했습니다.');
-    } finally {
-      setApplying(false);
-    }
-  };
-
-  const handleSelectInfluencer = async (applicationId: string, action: 'select' | 'reject') => {
-    try {
-      const auth = getFirebaseAuth();
-      const firebaseUser = auth.currentUser;
-      if (!firebaseUser) return;
-
-      const token = await firebaseUser.getIdToken();
+      const token = await user.getIdToken();
       const response = await fetch(`/api/campaigns/${campaignId}/applications/${applicationId}/select`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ action }),
       });
 
       const data = await response.json();
       if (data.success) {
-        loadData();
+        alert('인플루언서가 선정되었습니다.');
+        loadCampaign();
       }
     } catch (error) {
       console.error('Select influencer error:', error);
+      alert('선정에 실패했습니다.');
+    }
+  };
+
+  const handleRejectInfluencer = async (applicationId: string) => {
+    try {
+      const auth = getFirebaseAuth();
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/campaigns/${campaignId}/applications/${applicationId}/select`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: 'reject' }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert('거절되었습니다.');
+        loadCampaign();
+      }
+    } catch (error) {
+      console.error('Reject influencer error:', error);
+      alert('거절에 실패했습니다.');
     }
   };
 
   if (loading) {
-    return <div className="container mx-auto py-8">로딩 중...</div>;
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <p className="text-muted-foreground">로딩 중...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!campaign) {
-    return <div className="container mx-auto py-8">캠페인을 찾을 수 없습니다.</div>;
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <p className="text-muted-foreground">캠페인을 찾을 수 없습니다.</p>
+      </div>
+    );
   }
 
-  const isAdvertiser = user?.role === 'advertiser';
-  const isInfluencer = user?.role === 'influencer';
-  const isOwner = campaign.advertiserId === user?.id;
+  const appliedApplications = campaign.applications?.filter(app => app.status === 'applied' || app.status === 'underReview') || [];
+  const selectedApplications = campaign.applications?.filter(app => app.status === 'selected') || [];
 
   return (
-    <div className="container mx-auto py-8 max-w-6xl space-y-6">
-      <Card>
+    <div className="container mx-auto py-8 px-4 max-w-6xl">
+      {/* Back Button */}
+      <Button variant="ghost" asChild className="mb-6">
+        <Link href="/advertiser/dashboard">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          대시보드로 돌아가기
+        </Link>
+      </Button>
+
+      {/* Campaign Header */}
+      <Card className="mb-6">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>{campaign.title}</CardTitle>
-              <CardDescription>
-                상태: <Badge>{CAMPAIGN_STATUS_LABELS[campaign.status] || campaign.status}</Badge>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <StatusBadge status={campaign.status} />
+                <span className="text-sm text-muted-foreground">
+                  {new Date(campaign.createdAt).toLocaleDateString('ko-KR')}
+                </span>
+              </div>
+              <CardTitle className="text-2xl mb-2">{campaign.title}</CardTitle>
+              <CardDescription className="flex items-center gap-2">
+                <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs">
+                  {campaign.channel}
+                </span>
               </CardDescription>
             </div>
-<<<<<<<< HEAD:src/app/advertiser/campaigns/[id]/page.tsx
-            {campaign.status === 'GENERATED' && (
-              <Button onClick={() => router.push(`/advertiser/campaigns/${campaignId}/review`)}>
-========
-            {isOwner && campaign.status === 'GENERATED' && (
-              <Button onClick={() => router.push(`/campaigns/${campaignId}/review`)}>
->>>>>>>> f5ed8b9c2005c3e69be8b0f6c4c61b3552220f51:src/app/campaigns/[id]/page.tsx
-                검토하기
-              </Button>
-            )}
           </div>
         </CardHeader>
         <CardContent>
-          {/* 캠페인 상세 정보 */}
-          {campaign.spec && (
-            <div className="space-y-4 mb-6">
-              <div>
-                <h3 className="font-semibold mb-2">목적</h3>
-                <p className="text-muted-foreground">{campaign.spec.objective}</p>
+          {campaign.proposal && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-advertiser/10 p-2">
+                  <FileText className="h-4 w-4 text-advertiser" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">목적</p>
+                  <p className="font-medium">{campaign.proposal.objective}</p>
+                </div>
               </div>
-
-              {campaign.spec.target_audience && (
-                <div>
-                  <h3 className="font-semibold mb-2">타겟 오디언스</h3>
-                  <p className="text-muted-foreground">
-                    {campaign.spec.target_audience.demographics}
-                  </p>
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-advertiser/10 p-2">
+                  <Users className="h-4 w-4 text-advertiser" />
                 </div>
-              )}
-
-              {campaign.spec.recommended_content_types && campaign.spec.recommended_content_types.length > 0 && (
                 <div>
-                  <h3 className="font-semibold mb-2">추천 콘텐츠 유형</h3>
-                  <ul className="list-disc list-inside text-muted-foreground">
-                    {campaign.spec.recommended_content_types.map((type: any, idx: number) => (
-                      <li key={idx}>
-                        {type.platform} - {type.format}
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="text-xs text-muted-foreground">지원자</p>
+                  <p className="font-medium">{campaign.applications?.length || 0}명</p>
                 </div>
-              )}
-
-              {campaign.spec.budget_range && (
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-advertiser/10 p-2">
+                  <CheckCircle className="h-4 w-4 text-advertiser" />
+                </div>
                 <div>
-                  <h3 className="font-semibold mb-2">예산 범위</h3>
-                  <p className="text-muted-foreground">
-                    {campaign.spec.budget_range.min.toLocaleString()} ~ {campaign.spec.budget_range.max.toLocaleString()} {campaign.spec.budget_range.currency}
-                  </p>
+                  <p className="text-xs text-muted-foreground">선정</p>
+                  <p className="font-medium">{selectedApplications.length}명</p>
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* 인플루언서용: 지원 버튼 */}
-          {isInfluencer && campaign.status === 'OPEN' && (
-            <div className="pt-4 border-t">
-              <Button onClick={handleApply} disabled={applying}>
-                {applying ? '지원 중...' : '지원하기'}
-              </Button>
-            </div>
-          )}
-
-          {/* 광고주용: 지원자 목록 */}
-          {isOwner && campaign.applications && campaign.applications.length > 0 && (
-            <div className="space-y-4 pt-4 border-t">
-              <h3 className="text-lg font-semibold">지원자 목록</h3>
-              {campaign.applications.map((app: any) => (
-                <Card key={app.id}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold">{app.influencer?.displayName || '이름 없음'}</p>
-                        <p className="text-sm text-muted-foreground">{app.influencer?.email}</p>
-                        {app.message && (
-                          <p className="mt-2 text-sm">{app.message}</p>
-                        )}
-                        <Badge className="mt-2">
-                          {APPLICATION_STATUS_LABELS[app.status] || app.status}
-                        </Badge>
-                      </div>
-                      {app.status === 'APPLIED' && campaign.status === 'OPEN' && (
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => handleSelectInfluencer(app.id, 'select')}
-                          >
-                            선정
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleSelectInfluencer(app.id, 'reject')}
-                          >
-                            거절
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {/* 제출물 */}
-          {campaign.submissions && campaign.submissions.length > 0 && (
-            <div className="mt-6 space-y-4 pt-4 border-t">
-              <h3 className="text-lg font-semibold">제출물</h3>
-              {campaign.submissions.map((sub: any) => (
-                <Card key={sub.id}>
-                  <CardContent className="pt-6">
-                    <div>
-                      <a
-                        href={sub.postUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        {sub.postUrl}
-                      </a>
-                      <Badge className="ml-2">{sub.status}</Badge>
-                      {sub.metrics && (
-                        <div className="mt-2 text-sm text-muted-foreground">
-                          조회수: {sub.metrics.views || 0}, 좋아요: {sub.metrics.likes || 0}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Tabs */}
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="overview">개요</TabsTrigger>
+          <TabsTrigger value="applications">
+            지원자 ({appliedApplications.length})
+          </TabsTrigger>
+          <TabsTrigger value="selected">
+            선정된 인플루언서 ({selectedApplications.length})
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          {campaign.proposal && (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>타깃 & 톤</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">타깃 페르소나</p>
+                    <p className="text-sm">{campaign.proposal.target}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">톤 & 무드</p>
+                    <p className="text-sm">{campaign.proposal.tone}</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>실행 가이드</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">추천 콘텐츠 타입</p>
+                    <p className="text-sm">{campaign.proposal.contentType}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">핵심 메시지</p>
+                    <ul className="space-y-2">
+                      {campaign.proposal.coreMessages?.map((msg: string, idx: number) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm">
+                          <span className="text-advertiser mt-0.5">•</span>
+                          <span>{msg}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </TabsContent>
+
+        {/* Applications Tab */}
+        <TabsContent value="applications" className="space-y-4">
+          {appliedApplications.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">아직 지원자가 없습니다</p>
+              </CardContent>
+            </Card>
+          ) : (
+            appliedApplications.map((app) => (
+              <Card key={app.id}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{app.influencer.displayName}</CardTitle>
+                      <CardDescription>{app.influencer.email}</CardDescription>
+                    </div>
+                    <StatusBadge status={app.status} />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {app.message && (
+                    <div>
+                      <p className="text-sm font-medium mb-1">지원 메시지</p>
+                      <p className="text-sm text-muted-foreground">{app.message}</p>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">콘텐츠 타입</p>
+                      <p className="font-medium">{app.contentType}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">예상 일정</p>
+                      <p className="font-medium">{app.estimatedDate}</p>
+                    </div>
+                  </div>
+                  {app.status === 'applied' && (
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        onClick={() => handleSelectInfluencer(app.id)}
+                        className="bg-advertiser hover:bg-advertiser/90"
+                      >
+                        선정하기
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleRejectInfluencer(app.id)}
+                      >
+                        거절
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </TabsContent>
+
+        {/* Selected Tab */}
+        <TabsContent value="selected" className="space-y-4">
+          {selectedApplications.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <CheckCircle className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">선정된 인플루언서가 없습니다</p>
+              </CardContent>
+            </Card>
+          ) : (
+            selectedApplications.map((app) => (
+              <Card key={app.id} className="border-status-selected/20 bg-status-selected/5">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{app.influencer.displayName}</CardTitle>
+                      <CardDescription>{app.influencer.email}</CardDescription>
+                    </div>
+                    <StatusBadge status="selected" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">콘텐츠 타입</p>
+                      <p className="font-medium">{app.contentType}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">예상 일정</p>
+                      <p className="font-medium">{app.estimatedDate}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
-

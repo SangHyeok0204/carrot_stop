@@ -56,9 +56,9 @@ export default function SignupPage() {
 
       // 역할에 따라 리다이렉트
       if (role === 'advertiser') {
-        router.push('/advertiser/campaigns');
+        router.push('/advertiser/dashboard');
       } else if (role === 'influencer') {
-        router.push('/influencer/campaigns');
+        router.push('/influencer/feed');
       }
     } catch (err: any) {
       // Firebase Auth에 사용자가 생성되었지만 API 호출이 실패한 경우 롤백
@@ -89,10 +89,9 @@ export default function SignupPage() {
     }
   };
 
-  // Google 로그인으로 회원가입
+  // Google 로그인으로 회원가입 (기능 비활성화)
   const handleGoogleSignup = () => {
-    // 로그인 페이지로 이동 (로그인 페이지에서 Google 버튼 클릭)
-    router.push('/auth/login');
+    alert('Google 회원가입은 준비 중이에요! 조금만 기다려주세요 😊');
   };
 
   return (
