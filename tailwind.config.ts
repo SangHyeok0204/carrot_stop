@@ -52,6 +52,28 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        advertiser: {
+          DEFAULT: "hsl(var(--advertiser))",
+          foreground: "hsl(var(--advertiser-foreground))",
+        },
+        influencer: {
+          DEFAULT: "hsl(var(--influencer))",
+          foreground: "hsl(var(--influencer-foreground))",
+        },
+        admin: {
+          DEFAULT: "hsl(var(--admin))",
+          foreground: "hsl(var(--admin-foreground))",
+        },
+        status: {
+          recruiting: "hsl(var(--status-recruiting))",
+          inProgress: "hsl(var(--status-in-progress))",
+          completed: "hsl(var(--status-completed))",
+          pending: "hsl(var(--status-pending))",
+          selected: "hsl(var(--status-selected))",
+          delayed: "hsl(var(--status-delayed))",
+          applied: "hsl(var(--status-applied))",
+          underReview: "hsl(var(--status-under-review))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

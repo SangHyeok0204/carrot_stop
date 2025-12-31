@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { CAMPAIGN_STATUS_LABELS } from '@/lib/utils/constants';
+import { CAMPAIGN_STATUS_LABELS } from '@/lib/utils';
 
 export default function CampaignsPage() {
   const router = useRouter();
