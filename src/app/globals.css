@@ -24,6 +24,24 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+
+    /* Role-specific colors */
+    --advertiser: 217 91% 60%;        /* Blue #3B82F6 */
+    --advertiser-foreground: 0 0% 100%;
+    --influencer: 258 90% 66%;        /* Purple #8B5CF6 */
+    --influencer-foreground: 0 0% 100%;
+    --admin: 220 9% 46%;              /* Gray #6B7280 */
+    --admin-foreground: 0 0% 100%;
+
+    /* Status colors */
+    --status-recruiting: 217 91% 60%;  /* Blue #3B82F6 */
+    --status-in-progress: 258 90% 66%; /* Purple #8B5CF6 */
+    --status-completed: 220 9% 46%;    /* Gray #6B7280 */
+    --status-pending: 38 92% 50%;      /* Yellow #F59E0B */
+    --status-selected: 142 71% 45%;    /* Green #10B981 */
+    --status-delayed: 0 84% 60%;       /* Red #EF4444 */
+    --status-applied: 220 13% 69%;     /* Light Gray #9CA3AF */
+    --status-under-review: 217 91% 60%; /* Blue #3B82F6 */
   }
 
   .dark {

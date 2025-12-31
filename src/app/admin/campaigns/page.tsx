@@ -6,7 +6,7 @@ import { getFirebaseAuth } from '@/lib/firebase/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CAMPAIGN_STATUS_LABELS } from '@/lib/utils/constants';
+import { CAMPAIGN_STATUS_LABELS } from '@/lib/utils';
 import Link from 'next/link';
 
 export default function AdminCampaignsPage() {

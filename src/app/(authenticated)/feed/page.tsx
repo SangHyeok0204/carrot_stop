@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
-import { CAMPAIGN_STATUS_LABELS } from '@/lib/utils/constants';
+import { CAMPAIGN_STATUS_LABELS } from '@/lib/utils';
 import { Heart } from 'lucide-react';
 import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 import { getFirebaseApp } from '@/lib/firebase/auth';

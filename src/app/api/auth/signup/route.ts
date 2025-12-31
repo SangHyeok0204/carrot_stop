@@ -119,13 +119,21 @@ export async function POST(request: NextRequest) {
     }
 
     // 6. Firestore에 사용자 문서 생성
-    await createUser(user.uid, {
+    const userDoc: any = {
       email,
-      displayName: displayName || undefined,
+      displayName: displayName || null, // 또는 displayName이 필수면 그냥 displayName
       role: role as UserRole,
-      profile: profile || undefined,
-      authProviders: providers.length > 0 ? providers : ['password'], // 기본값
-    });
+      authProviders: providers.length > 0 ? providers : ['password'],
+    };
+
+    // profile이 "있을 때만" 필드 추가 (undefined 방지)
+    if (profile) {
+      userDoc.profile = profile;
+    }
+    if (displayName) userDoc.displayName = displayName;
+    
+    await createUser(user.uid, userDoc);
+
 
     return NextResponse.json({
       success: true,

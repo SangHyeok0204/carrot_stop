@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { getFirebaseAuth } from '@/lib/firebase/auth';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { onAuthStateChanged } from 'firebase/auth';
+import { TopNav } from '@/components/TopNav';
 
 export default function AdvertiserLayout({
   children,
@@ -13,8 +12,8 @@ export default function AdvertiserLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
@@ -40,55 +39,30 @@ export default function AdvertiserLayout({
         }
       } catch (error) {
         router.push('/auth/login');
+      } finally {
+        setLoading(false);
       }
     });
 
     return () => unsubscribe();
   }, [router]);
 
-  const handleLogout = async () => {
-    const auth = getFirebaseAuth();
-    await signOut(auth);
-    router.push('/auth/login');
-  };
-
-  if (!user) {
-    return <div>로딩 중...</div>;
+  if (loading || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-muted-foreground">로딩 중...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen">
-      <nav className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/advertiser/campaigns" className="font-bold text-xl">
-              AI 광고 플랫폼
-            </Link>
-            <div className="flex gap-4">
-              <Link
-                href="/advertiser/campaigns"
-                className={`${pathname?.includes('/advertiser/campaigns') && !pathname?.includes('/advertiser/campaigns/new') ? 'font-semibold' : ''}`}
-              >
-                캠페인
-              </Link>
-              <Link
-                href="/advertiser/campaigns/new"
-                className={`${pathname?.includes('/advertiser/campaigns/new') ? 'font-semibold' : ''}`}
-              >
-                새 캠페인
-              </Link>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">{user.displayName || user.email}</span>
-            <Button variant="outline" onClick={handleLogout} size="sm">
-              로그아웃
-            </Button>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-background">
+      <TopNav
+        role="advertiser"
+        userEmail={user.email}
+        userName={user.displayName}
+      />
       <main>{children}</main>
     </div>
   );
 }
-

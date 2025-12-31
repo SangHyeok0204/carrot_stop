@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getFirebaseAuth } from '@/lib/firebase/auth';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { googleSignIn, handleGoogleSignInRedirect, checkExistingSignInMethods, checkUserDocumentExists } from '@/lib/auth/googleAuth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,19 +15,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  // Redirect 결과 처리
-  useEffect(() => {
-    handleGoogleSignInRedirect().then((result) => {
-      if (result) {
-        if (result.success && result.user) {
-          handleGoogleLoginSuccess(result.user, result.isNewUser || false);
-        } else if (result.error) {
-          setError(result.error.message);
-        }
-      }
-    });
-  }, []);
 
   // 이메일/비밀번호 로그인
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -38,9 +24,11 @@ export default function LoginPage() {
 
     try {
       const auth = getFirebaseAuth();
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      await handlePostLogin(userCredential.user);
+      await signInWithEmailAndPassword(auth, email, password);
+      // 성공 시 바로 /campaigns로 이동 (role 체크 없음)
+      router.push('/campaigns');
     } catch (err: any) {
+      // 에러 처리 (기존 UI 에러 영역에 표시)
       if (err.code === 'auth/user-not-found') {
         setError('가입되지 않은 이메일이에요. 회원가입을 먼저 해주세요! 😊');
       } else if (err.code === 'auth/wrong-password') {
@@ -55,92 +43,9 @@ export default function LoginPage() {
     }
   };
 
-  // Google 로그인
+  // Google 로그인 (기능 비활성화)
   const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError('');
-
-    try {
-      const result = await googleSignIn();
-      
-      if (result.success && result.user) {
-        await handleGoogleLoginSuccess(result.user, result.isNewUser || false);
-      } else if (result.error) {
-        setError(result.error.message);
-      }
-    } catch (err: any) {
-      setError('로그인 중 문제가 발생했어요 😅');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Google 로그인 성공 처리
-  const handleGoogleLoginSuccess = async (user: any, isNewUser: boolean) => {
-    try {
-      // 🔥 중요: Firestore 문서 존재 여부로 실제 가입 완료 여부 확인
-      const hasUserDocument = await checkUserDocumentExists();
-      
-      if (!hasUserDocument) {
-        // Firestore 문서 없음 = 가입 미완료 (역할 선택 필요)
-        
-        // 이메일 중복 확인 (다른 방법으로 이미 가입된 경우)
-        const { exists, methods } = await checkExistingSignInMethods(user.email);
-        
-        if (exists && !methods.includes('google.com')) {
-          // 다른 방법으로 이미 가입된 이메일
-          setError(
-            '이 이메일은 이미 다른 방법으로 가입되어 있어요. ' +
-            '기존 방법으로 로그인해주세요! 🔐'
-          );
-          
-          // Firebase Auth에서 방금 생성된 사용자 삭제
-          const auth = getFirebaseAuth();
-          await auth.currentUser?.delete();
-          
-          return;
-        }
-        
-        // 중복 없음 → 역할 선택 페이지로
-        router.push('/auth/select-role');
-      } else {
-        // Firestore 문서 있음 = 이미 가입 완료 → 역할 확인 후 리다이렉트
-        await handlePostLogin(user);
-      }
-    } catch (error) {
-      console.error('Google login post-processing error:', error);
-      setError('로그인 처리 중 문제가 발생했어요 😢');
-    }
-  };
-
-  // 로그인 후 역할 확인 및 리다이렉트
-  const handlePostLogin = async (user: any) => {
-    try {
-      const token = await user.getIdToken();
-      const response = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      
-      if (data.success) {
-        const role = data.data.role;
-        if (role === 'admin') {
-          router.push('/admin/dashboard');
-        } else if (role === 'advertiser') {
-          router.push('/advertiser/campaigns');
-        } else if (role === 'influencer') {
-          router.push('/influencer/campaigns');
-        }
-      } else {
-        // 역할이 없으면 역할 선택 페이지로
-        router.push('/auth/select-role');
-      }
-    } catch (error) {
-      console.error('Failed to fetch user role:', error);
-      setError('사용자 정보를 가져오는데 실패했어요 😢');
-    }
+    alert('Google 로그인은 준비 중이에요! 조금만 기다려주세요 😊');
   };
 
   // 카카오 로그인 (준비 중)
@@ -262,4 +167,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
