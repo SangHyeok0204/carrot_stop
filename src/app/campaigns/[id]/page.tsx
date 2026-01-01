@@ -24,15 +24,9 @@ export default function CampaignDetailPage() {
   const loadData = async () => {
     try {
       const auth = getFirebaseAuth();
-<<<<<<<< HEAD:src/app/advertiser/campaigns/[id]/page.tsx
-      const user = auth.currentUser;
-      if (!user) {
-        router.push('/auth/login');
-========
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) {
-        router.push('/login');
->>>>>>>> f5ed8b9c2005c3e69be8b0f6c4c61b3552220f51:src/app/campaigns/[id]/page.tsx
+        router.push('/auth/login');
         return;
       }
 
@@ -142,13 +136,8 @@ export default function CampaignDetailPage() {
                 상태: <Badge>{CAMPAIGN_STATUS_LABELS[campaign.status] || campaign.status}</Badge>
               </CardDescription>
             </div>
-<<<<<<<< HEAD:src/app/advertiser/campaigns/[id]/page.tsx
-            {campaign.status === 'GENERATED' && (
-              <Button onClick={() => router.push(`/advertiser/campaigns/${campaignId}/review`)}>
-========
             {isOwner && campaign.status === 'GENERATED' && (
               <Button onClick={() => router.push(`/campaigns/${campaignId}/review`)}>
->>>>>>>> f5ed8b9c2005c3e69be8b0f6c4c61b3552220f51:src/app/campaigns/[id]/page.tsx
                 검토하기
               </Button>
             )}

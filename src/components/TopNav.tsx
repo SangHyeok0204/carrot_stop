@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { RoleBadge } from "@/components/RoleBadge"
 import { cn } from "@/lib/utils"
-import { getFirebaseAuth } from "@/lib/firebase"
+import { getFirebaseAuth } from "@/lib/firebase/auth"
 import { signOut } from "firebase/auth"
 
 type Role = "advertiser" | "influencer" | "admin"

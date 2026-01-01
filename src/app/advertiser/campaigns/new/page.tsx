@@ -1,437 +1,495 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { TopNav } from '@/components/shared';
+import { useCampaigns, Objective, Channel, BudgetRange, CreateCampaignInput } from '@/contexts';
 import { getFirebaseAuth } from '@/lib/firebase/auth';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronRight, ChevronLeft, Check, Sparkles } from 'lucide-react';
+import { onAuthStateChanged } from 'firebase/auth';
 
-// Mock AI 기획서 데이터 타입
-interface CampaignProposal {
-  title: string;
-  objective: string;
-  target: string;
-  tone: string;
-  contentType: string;
-  coreMessages: string[];
-  legalChecklist: string[];
-  estimatedBudget: string;
-  estimatedDuration: string;
-  channel: string;
+// ============================================
+// Form Step Types
+// ============================================
+
+type FormStep = 1 | 2 | 3;
+
+// ============================================
+// Option Button Component
+// ============================================
+
+interface OptionButtonProps {
+  label: string;
+  icon?: string;
+  selected: boolean;
+  onClick: () => void;
 }
 
-// Step 3 옵션 타입
-interface CampaignDetails {
-  budget: string;
-  duration: string;
-  channel: string;
+function OptionButton({ label, icon, selected, onClick }: OptionButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`
+        flex items-center gap-2 px-4 py-3 rounded-xl
+        border-2 transition-all duration-200
+        ${selected
+          ? 'border-purple-600 bg-purple-50 text-purple-700'
+          : 'border-purple-100 bg-white text-gray-700 hover:border-purple-300 hover:bg-purple-50'
+        }
+      `}
+    >
+      {icon && <span className="text-xl">{icon}</span>}
+      <span className="font-medium">{label}</span>
+      {selected && <span className="ml-auto text-purple-600">✓</span>}
+    </button>
+  );
 }
+
+// ============================================
+// Step Indicator Component
+// ============================================
+
+interface StepIndicatorProps {
+  currentStep: FormStep;
+}
+
+function StepIndicator({ currentStep }: StepIndicatorProps) {
+  const steps = [
+    { num: 1, label: '캠페인 정보' },
+    { num: 2, label: '세부 설정' },
+    { num: 3, label: '확인' },
+  ];
+
+  return (
+    <div className="flex items-center justify-center gap-2 mb-8">
+      {steps.map(({ num, label }, index) => (
+        <div key={num} className="flex items-center">
+          <div className={`
+            flex items-center gap-2 px-4 py-2 rounded-full
+            ${num === currentStep
+              ? 'bg-purple-600 text-white'
+              : num < currentStep
+                ? 'bg-purple-100 text-purple-600'
+                : 'bg-gray-100 text-gray-400'
+            }
+          `}>
+            <span className="w-6 h-6 flex items-center justify-center rounded-full bg-white/20 text-sm font-bold">
+              {num < currentStep ? '✓' : num}
+            </span>
+            <span className="hidden sm:inline text-sm font-medium">{label}</span>
+          </div>
+          {index < steps.length - 1 && (
+            <div className={`w-8 h-0.5 mx-2 ${num < currentStep ? 'bg-purple-300' : 'bg-gray-200'}`} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ============================================
+// New Campaign Page
+// ============================================
 
 export default function NewCampaignPage() {
   const router = useRouter();
-  const [step, setStep] = useState(1);
-  const [input, setInput] = useState('');
-  const [proposal, setProposal] = useState<CampaignProposal | null>(null);
-  const [details, setDetails] = useState<CampaignDetails>({
-    budget: '',
-    duration: '',
-    channel: 'instagram',
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const { addCampaign, isLoading: campaignLoading } = useCampaigns();
+  const [user, setUser] = useState<{ uid: string; displayName: string | null } | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
-  // Step 1: 자연어 입력 제출
-  const handleStep1Submit = async () => {
-    setLoading(true);
-    setError('');
+  const [step, setStep] = useState<FormStep>(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Form state
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [objective, setObjective] = useState<Objective | ''>('');
+  const [channel, setChannel] = useState<Channel | ''>('');
+  const [budgetRange, setBudgetRange] = useState<BudgetRange | ''>('');
+  const [deadline, setDeadline] = useState('');
+
+  // Firebase Auth 상태 확인
+  useEffect(() => {
+    const auth = getFirebaseAuth();
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const token = await firebaseUser.getIdToken();
+          const response = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          const data = await response.json();
+
+          if (data.success && data.data?.role === 'advertiser') {
+            setUser({
+              uid: firebaseUser.uid,
+              displayName: data.data.displayName || firebaseUser.displayName,
+            });
+          } else {
+            // 광고주가 아니면 메인으로 리다이렉트
+            router.push('/main');
+          }
+        } catch (e) {
+          console.error('Auth error:', e);
+          router.push('/auth/login');
+        }
+      } else {
+        router.push('/auth/login');
+      }
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  // Validation
+  const isStep1Valid = title.trim() && description.trim() && objective;
+  const isStep2Valid = channel && budgetRange && deadline;
+
+  // Options
+  const objectives: { value: Objective; label: string; icon: string }[] = [
+    { value: '인지도', label: '인지도 향상', icon: '👁️' },
+    { value: '방문유도', label: '웹사이트/앱 방문', icon: '🔗' },
+    { value: '구매전환', label: '구매 전환', icon: '💳' },
+    { value: '팔로우·구독', label: '팔로우·구독', icon: '❤️' },
+  ];
+
+  const channels: { value: Channel; label: string; icon: string }[] = [
+    { value: 'Instagram', label: 'Instagram', icon: '📸' },
+    { value: 'YouTube', label: 'YouTube', icon: '🎬' },
+    { value: 'TikTok', label: 'TikTok', icon: '🎵' },
+  ];
+
+  const budgets: { value: BudgetRange; label: string }[] = [
+    { value: '10만 미만', label: '10만원 미만' },
+    { value: '10-30만', label: '10-30만원' },
+    { value: '30-50만', label: '30-50만원' },
+    { value: '50-100만', label: '50-100만원' },
+    { value: '100만+', label: '100만원 이상' },
+  ];
+
+  // Handlers
+  const handleNext = () => {
+    if (step < 3) setStep((prev) => (prev + 1) as FormStep);
+  };
+
+  const handleBack = () => {
+    if (step > 1) setStep((prev) => (prev - 1) as FormStep);
+  };
+
+  const handleSubmit = async () => {
+    if (!user || !objective || !channel || !budgetRange) return;
+
+    setIsSubmitting(true);
 
     try {
-      // MVP에서는 Mock 데이터 사용
-      // 실제 AI 호출은 후순위
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      const mockProposal: CampaignProposal = {
-        title: "건강한 자연미를 담은 헤어케어 캠페인",
-        objective: "인지도",
-        target: "자연스러운 뷰티를 추구하는 20-30대 여성, 건강한 라이프스타일에 관심 있는 직장인",
-        tone: "자연스럽고 따뜻한 톤, 신뢰감 있는 전문성",
-        contentType: "Reels, Feed Post",
-        coreMessages: [
-          "자연 유래 성분으로 만든 건강한 헤어케어",
-          "일상 속에서 쉽게 실천하는 셀프 케어",
-          "지속 가능한 뷰티 루틴"
-        ],
-        legalChecklist: [
-          "「광고 표기」 문구 필수 포함",
-          "효능·효과 과대 광고 금지",
-          "개인정보 수집 시 동의 절차 필요"
-        ],
-        estimatedBudget: "30-50만원 추천",
-        estimatedDuration: "2주 권장",
-        channel: "Instagram"
+      const input: CreateCampaignInput = {
+        title: title.trim(),
+        description: description.trim(),
+        objective: objective as Objective,
+        channel: channel as Channel,
+        budgetRange: budgetRange as BudgetRange,
+        deadline,
       };
 
-      setProposal(mockProposal);
-      setStep(2);
-    } catch (err: any) {
-      setError(err.message || '기획서 생성에 실패했습니다.');
-    } finally {
-      setLoading(false);
+      const newCampaign = await addCampaign(input);
+
+      if (newCampaign) {
+        // 성공 → 대시보드로 이동
+        router.push('/advertiser/dashboard');
+      } else {
+        // 실패 시 에러 처리
+        alert('캠페인 등록에 실패했습니다. 다시 시도해주세요.');
+        setIsSubmitting(false);
+      }
+    } catch (error) {
+      console.error('Campaign creation error:', error);
+      alert('캠페인 등록 중 오류가 발생했습니다.');
+      setIsSubmitting(false);
     }
   };
 
-  // Step 2 → Step 3
-  const handleStep2Next = () => {
-    setStep(3);
+  // 기본 마감일 설정 (2주 후)
+  const getDefaultDeadline = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 14);
+    return date.toISOString().split('T')[0];
   };
 
-  // Step 3: 최종 제출 (캠페인 오픈)
-  const handleFinalSubmit = async () => {
-    setLoading(true);
-    setError('');
+  if (!deadline && typeof window !== 'undefined') {
+    setDeadline(getDefaultDeadline());
+  }
 
-    try {
-      const auth = getFirebaseAuth();
-      const user = auth.currentUser;
-      if (!user) {
-        throw new Error('로그인이 필요합니다.');
-      }
-
-      const token = await user.getIdToken();
-
-      const response = await fetch('/api/campaigns', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          naturalLanguageInput: input,
-          proposal,
-          budget: details.budget,
-          duration: details.duration,
-          channel: details.channel,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error?.message || '캠페인 생성에 실패했습니다.');
-      }
-
-      // 캠페인 오픈 완료 후 대시보드로 이동
-      router.push('/advertiser/dashboard');
-    } catch (err: any) {
-      setError(err.message || '캠페인 생성에 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 로딩 중
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
-      {/* Progress Indicator */}
-      <div className="mb-8">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          {[1, 2, 3].map((s) => (
-            <div key={s} className="flex items-center">
-              <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
-                  s === step
-                    ? 'bg-advertiser text-advertiser-foreground'
-                    : s < step
-                    ? 'bg-advertiser/20 text-advertiser'
-                    : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                {s < step ? <Check className="h-4 w-4" /> : s}
-              </div>
-              {s < 3 && (
-                <div
-                  className={`h-0.5 w-12 mx-2 ${
-                    s < step ? 'bg-advertiser' : 'bg-muted'
-                  }`}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-        <p className="text-center text-sm text-muted-foreground">
-          {step === 1 && "아이디어 입력"}
-          {step === 2 && "AI 기획서 확인"}
-          {step === 3 && "캠페인 세부사항"}
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50">
+      <TopNav />
 
-      {/* Step 1: 자연어 입력 */}
-      {step === 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-advertiser" />
-              캠페인 아이디어를 입력해주세요
-            </CardTitle>
-            <CardDescription>
-              광고를 몰라도 됩니다. 원하시는 느낌이나 목적을 자연어로 자유롭게 설명해주세요.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <Textarea
-                placeholder="예: 우리 회사의 새로운 헤어케어 제품을 20-30대 여성들에게 알리고 싶어요. 자연스럽고 건강한 느낌으로 소개하고 싶은데, 너무 과하지 않게요."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                className="min-h-[240px] text-base"
-                required
-              />
-              <p className="mt-2 text-sm text-muted-foreground">
-                최소 10자 이상 입력해주세요.
-              </p>
-            </div>
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
-            <Button
-              onClick={handleStep1Submit}
-              className="w-full bg-advertiser hover:bg-advertiser/90"
-              disabled={loading || input.trim().length < 10}
-            >
-              {loading ? '생성 중...' : (
-                <>
-                  다음
-                  <ChevronRight className="ml-2 h-4 w-4" />
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      <main className="pt-24 pb-16 px-4 sm:px-6">
+        <div className="max-w-2xl mx-auto">
+          {/* 헤더 */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <span className="bg-gradient-to-r from-purple-600 to-violet-500 bg-clip-text text-transparent">
+                새 캠페인 만들기
+              </span>
+            </h1>
+            <p className="text-gray-600">
+              캠페인 정보를 입력하고 인플루언서를 모집하세요
+            </p>
+          </div>
 
-      {/* Step 2: AI 기획서 결과 (카드형) */}
-      {step === 2 && proposal && (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>캠페인 요약</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-lg mb-2">{proposal.title}</h3>
-                <div className="inline-flex items-center rounded-full bg-advertiser/10 px-3 py-1 text-xs font-semibold text-advertiser">
-                  {proposal.objective}
+          {/* 스텝 인디케이터 */}
+          <StepIndicator currentStep={step} />
+
+          {/* 폼 카드 */}
+          <div className="bg-white rounded-3xl border border-purple-100 p-6 sm:p-8 shadow-lg">
+            {/* Step 1: 기본 정보 */}
+            {step === 1 && (
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    캠페인 제목 *
+                  </label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="예: 신제품 립스틱 체험단 모집"
+                    className="
+                      w-full px-4 py-3 rounded-xl
+                      border border-purple-100
+                      focus:border-purple-500 focus:ring-2 focus:ring-purple-200
+                      outline-none transition-all
+                    "
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    캠페인 설명 *
+                  </label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="캠페인에 대해 자세히 설명해주세요. 브랜드 소개, 제품 특징, 원하는 콘텐츠 스타일 등..."
+                    rows={4}
+                    className="
+                      w-full px-4 py-3 rounded-xl
+                      border border-purple-100
+                      focus:border-purple-500 focus:ring-2 focus:ring-purple-200
+                      outline-none transition-all resize-none
+                    "
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    캠페인 목적 *
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {objectives.map(({ value, label, icon }) => (
+                      <OptionButton
+                        key={value}
+                        label={label}
+                        icon={icon}
+                        selected={objective === value}
+                        onClick={() => setObjective(value)}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>타깃 & 톤</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">타깃 페르소나</p>
-                <p className="text-sm">{proposal.target}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">톤 & 무드</p>
-                <p className="text-sm">{proposal.tone}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>실행 가이드</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">추천 콘텐츠 타입</p>
-                <p className="text-sm">{proposal.contentType}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-2">핵심 메시지</p>
-                <ul className="space-y-2">
-                  {proposal.coreMessages.map((msg, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm">
-                      <span className="text-advertiser mt-0.5">•</span>
-                      <span>{msg}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-yellow-200 bg-yellow-50/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-yellow-800">
-                ⚠️ 법적/운영 체크리스트
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {proposal.legalChecklist.map((item, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-sm text-yellow-900">
-                    <span className="mt-0.5">•</span>
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
-
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setStep(1)}
-              className="flex-1"
-            >
-              <ChevronLeft className="mr-2 h-4 w-4" />
-              이전
-            </Button>
-            <Button
-              onClick={handleStep2Next}
-              className="flex-1 bg-advertiser hover:bg-advertiser/90"
-            >
-              다음
-              <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 3: 3문항 확인 */}
-      {step === 3 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>캠페인 세부사항 확인</CardTitle>
-            <CardDescription>
-              예산, 기간, 채널을 최종 확정해주세요.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* 문항 1: 예산 범위 */}
-            <div className="space-y-3">
-              <label className="text-sm font-semibold">예산 범위 (필수)</label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {[
-                  { value: '<10', label: '10만원 미만' },
-                  { value: '10-30', label: '10-30만원' },
-                  { value: '30-50', label: '30-50만원' },
-                  { value: '50-100', label: '50-100만원' },
-                  { value: '100+', label: '100만원 이상' },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setDetails({ ...details, budget: option.value })}
-                    className={`px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${
-                      details.budget === option.value
-                        ? 'border-advertiser bg-advertiser/10 text-advertiser'
-                        : 'border-border hover:border-advertiser/50'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 문항 2: 캠페인 기간 */}
-            <div className="space-y-3">
-              <label className="text-sm font-semibold">캠페인 기간</label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {[
-                  { value: '3days', label: '3일' },
-                  { value: '1week', label: '1주' },
-                  { value: '2weeks', label: '2주' },
-                  { value: '1month', label: '1개월' },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setDetails({ ...details, duration: option.value })}
-                    className={`px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${
-                      details.duration === option.value
-                        ? 'border-advertiser bg-advertiser/10 text-advertiser'
-                        : 'border-border hover:border-advertiser/50'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 문항 3: 희망 채널 */}
-            <div className="space-y-3">
-              <label className="text-sm font-semibold">희망 채널</label>
-              <p className="text-xs text-muted-foreground">
-                MVP에서는 Instagram 기준으로 진행됩니다
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {[
-                  { value: 'instagram', label: 'Instagram', available: true },
-                  { value: 'youtube', label: 'YouTube', available: false },
-                  { value: 'blog', label: '블로그', available: false },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => option.available && setDetails({ ...details, channel: option.value })}
-                    disabled={!option.available}
-                    className={`px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${
-                      details.channel === option.value
-                        ? 'border-advertiser bg-advertiser/10 text-advertiser'
-                        : option.available
-                        ? 'border-border hover:border-advertiser/50'
-                        : 'border-border bg-muted text-muted-foreground cursor-not-allowed'
-                    }`}
-                  >
-                    {option.label}
-                    {!option.available && <span className="ml-1 text-xs">(준비중)</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
             )}
 
-            <div className="flex gap-3 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setStep(2)}
-                className="flex-1"
-              >
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                이전
-              </Button>
-              <Button
-                onClick={handleFinalSubmit}
-                className="flex-1 bg-advertiser hover:bg-advertiser/90"
-                disabled={loading || !details.budget || !details.duration}
-              >
-                {loading ? '오픈 중...' : (
-                  <>
-                    <Check className="mr-2 h-4 w-4" />
-                    캠페인 오픈
-                  </>
-                )}
-              </Button>
+            {/* Step 2: 세부 설정 */}
+            {step === 2 && (
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    채널 선택 *
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {channels.map(({ value, label, icon }) => (
+                      <OptionButton
+                        key={value}
+                        label={label}
+                        icon={icon}
+                        selected={channel === value}
+                        onClick={() => setChannel(value)}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    예산 범위 *
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {budgets.map(({ value, label }) => (
+                      <OptionButton
+                        key={value}
+                        label={label}
+                        selected={budgetRange === value}
+                        onClick={() => setBudgetRange(value)}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    모집 마감일 *
+                  </label>
+                  <input
+                    type="date"
+                    value={deadline}
+                    onChange={(e) => setDeadline(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="
+                      w-full px-4 py-3 rounded-xl
+                      border border-purple-100
+                      focus:border-purple-500 focus:ring-2 focus:ring-purple-200
+                      outline-none transition-all
+                    "
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: 확인 */}
+            {step === 3 && (
+              <div className="space-y-6">
+                <div className="text-center mb-6">
+                  <div className="text-5xl mb-4">🎉</div>
+                  <h2 className="text-xl font-bold text-gray-900">캠페인 정보 확인</h2>
+                  <p className="text-gray-500">아래 내용을 확인하고 캠페인을 등록하세요</p>
+                </div>
+
+                <div className="bg-purple-50 rounded-2xl p-6 space-y-4">
+                  <div className="flex justify-between items-start">
+                    <span className="text-gray-500">제목</span>
+                    <span className="font-semibold text-gray-900 text-right max-w-[60%]">{title}</span>
+                  </div>
+                  <div className="flex justify-between items-start">
+                    <span className="text-gray-500">목적</span>
+                    <span className="font-semibold text-gray-900">
+                      {objectives.find(o => o.value === objective)?.icon} {objective}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">채널</span>
+                    <span className="font-semibold text-gray-900">
+                      {channels.find(c => c.value === channel)?.icon} {channel}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">예산</span>
+                    <span className="font-semibold text-gray-900">{budgetRange}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">마감일</span>
+                    <span className="font-semibold text-gray-900">
+                      {new Date(deadline).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                  <p className="text-green-700 text-sm flex items-start gap-2">
+                    <span>✅</span>
+                    <span>
+                      캠페인을 등록하면 즉시 <strong>모집중</strong> 상태로 공개되며,
+                      인플루언서들이 지원할 수 있습니다.
+                    </span>
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* 버튼 영역 */}
+            <div className="flex justify-between mt-8 pt-6 border-t border-purple-100">
+              {step > 1 ? (
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="
+                    px-6 py-3 rounded-xl
+                    text-gray-600 font-medium
+                    hover:bg-gray-100
+                    transition-colors
+                  "
+                >
+                  ← 이전
+                </button>
+              ) : (
+                <Link
+                  href="/advertiser/dashboard"
+                  className="
+                    px-6 py-3 rounded-xl
+                    text-gray-600 font-medium
+                    hover:bg-gray-100
+                    transition-colors
+                  "
+                >
+                  취소
+                </Link>
+              )}
+
+              {step < 3 ? (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={step === 1 ? !isStep1Valid : !isStep2Valid}
+                  className={`
+                    px-6 py-3 rounded-xl font-semibold
+                    transition-all duration-200
+                    ${(step === 1 ? isStep1Valid : isStep2Valid)
+                      ? 'bg-purple-600 text-white hover:bg-purple-700 active:scale-95'
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }
+                  `}
+                >
+                  다음 →
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className={`
+                    px-8 py-3 rounded-xl font-semibold
+                    transition-all duration-200
+                    ${isSubmitting
+                      ? 'bg-purple-400 text-white cursor-wait'
+                      : 'bg-gradient-to-r from-purple-600 to-violet-600 text-white hover:from-purple-700 hover:to-violet-700 active:scale-95 shadow-lg shadow-purple-200'
+                    }
+                  `}
+                >
+                  {isSubmitting ? '등록 중...' : '🚀 캠페인 등록하기'}
+                </button>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

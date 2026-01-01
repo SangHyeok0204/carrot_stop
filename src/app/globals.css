@@ -10,38 +10,47 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+
+    /* Primary: Purple 계열로 통일 */
+    --primary: 258 90% 58%;            /* #7C3AED - Purple-600 */
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary: 연한 Purple */
+    --secondary: 258 90% 96%;          /* #EDE9FE - Purple-50 */
+    --secondary-foreground: 258 90% 42%; /* #5B21B6 - Purple-800 */
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    /* Accent: Violet */
+    --accent: 258 90% 76%;             /* #A78BFA - Purple-400 */
+    --accent-foreground: 258 90% 20%;
+
+    --destructive: 0 84% 60%;          /* #EF4444 - Red */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 258 30% 92%;             /* Purple-tinted border */
+    --input: 258 30% 92%;
+    --ring: 258 90% 58%;               /* Match primary */
     --radius: 0.5rem;
 
     /* Role-specific colors */
-    --advertiser: 217 91% 60%;        /* Blue #3B82F6 */
+    --advertiser: 217 91% 60%;         /* Blue #3B82F6 */
     --advertiser-foreground: 0 0% 100%;
-    --influencer: 258 90% 66%;        /* Purple #8B5CF6 */
+    --influencer: 258 90% 58%;         /* Purple #7C3AED */
     --influencer-foreground: 0 0% 100%;
-    --admin: 220 9% 46%;              /* Gray #6B7280 */
+    --admin: 220 9% 46%;               /* Gray #6B7280 */
     --admin-foreground: 0 0% 100%;
 
-    /* Status colors */
-    --status-recruiting: 217 91% 60%;  /* Blue #3B82F6 */
-    --status-in-progress: 258 90% 66%; /* Purple #8B5CF6 */
-    --status-completed: 220 9% 46%;    /* Gray #6B7280 */
-    --status-pending: 38 92% 50%;      /* Yellow #F59E0B */
-    --status-selected: 142 71% 45%;    /* Green #10B981 */
-    --status-delayed: 0 84% 60%;       /* Red #EF4444 */
-    --status-applied: 220 13% 69%;     /* Light Gray #9CA3AF */
-    --status-under-review: 217 91% 60%; /* Blue #3B82F6 */
+    /* Status colors - 통일된 의미 체계 */
+    --status-recruiting: 142 71% 45%;  /* Green #10B981 - 모집중/활성 */
+    --status-in-progress: 258 90% 58%; /* Purple #7C3AED - 진행중 */
+    --status-completed: 220 9% 46%;    /* Gray #6B7280 - 완료 */
+    --status-pending: 38 92% 50%;      /* Amber #F59E0B - 대기/경고 */
+    --status-selected: 142 71% 45%;    /* Green #10B981 - 선정/성공 */
+    --status-delayed: 0 84% 60%;       /* Red #EF4444 - 지연/위험 */
+    --status-applied: 258 90% 76%;     /* Light Purple #A78BFA - 지원됨 */
+    --status-under-review: 38 92% 50%; /* Amber #F59E0B - 검토중 */
   }
 
   .dark {

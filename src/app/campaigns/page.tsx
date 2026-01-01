@@ -1,6 +1,5 @@
-import CampaignsList from '@/components/campaigns/CampaignsList';
+import { redirect } from 'next/navigation';
 
 export default function CampaignsPage() {
-  return <CampaignsList />;
+  redirect('/main');
 }
-

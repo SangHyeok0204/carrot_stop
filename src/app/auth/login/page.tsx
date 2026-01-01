@@ -25,8 +25,8 @@ export default function LoginPage() {
     try {
       const auth = getFirebaseAuth();
       await signInWithEmailAndPassword(auth, email, password);
-      // 성공 시 바로 /campaigns로 이동 (role 체크 없음)
-      router.push('/campaigns');
+      // 성공 시 /main으로 이동
+      router.push('/main');
     } catch (err: any) {
       // 에러 처리 (기존 UI 에러 영역에 표시)
       if (err.code === 'auth/user-not-found') {
@@ -59,10 +59,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8 bg-gradient-to-br from-blue-50 to-indigo-50">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">로그인</CardTitle>
+    <div className="min-h-screen flex items-center justify-center p-8 bg-gradient-to-b from-purple-50 via-white to-purple-50 relative overflow-hidden">
+      {/* 배경 장식 */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 left-10 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-10 w-80 h-80 bg-violet-200/30 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 right-1/4 w-40 h-40 bg-pink-200/20 rounded-full blur-2xl" />
+      </div>
+
+      <Card className="w-full max-w-md relative z-10 border-purple-100 shadow-xl">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent">로그인</CardTitle>
           <CardDescription>계정에 로그인하세요</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -151,14 +158,18 @@ export default function LoginPage() {
                 {error}
               </p>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700"
+              disabled={loading}
+            >
               {loading ? '로그인 중...' : '이메일로 로그인'}
             </Button>
           </form>
 
           <p className="mt-4 text-center text-sm text-muted-foreground">
             계정이 없으신가요?{' '}
-            <Link href="/auth/signup" className="text-primary hover:underline font-medium">
+            <Link href="/auth/signup" className="text-purple-600 hover:text-purple-700 hover:underline font-medium">
               회원가입
             </Link>
           </p>
