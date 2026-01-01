@@ -142,7 +142,7 @@ export default function HomePage() {
             }`}
           >
             <p className="text-2xl sm:text-3xl md:text-4xl text-white max-w-3xl mx-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] font-medium">
-              꿈을 실현하는 플랫폼. AI 광고 플랫폼에서 빠르게 구축하고 크게 성장하세요.
+              광고를 연결로 바꾸다
             </p>
           </div>
 
