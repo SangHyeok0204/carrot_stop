@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { MainCampaign } from '@/lib/mock/mainCampaigns';
+import { MainCampaign } from '@/types/mainCampaign';
 
 interface CampaignCardProps {
   campaign: MainCampaign;

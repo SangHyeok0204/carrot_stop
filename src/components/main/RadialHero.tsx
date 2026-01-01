@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { MAIN_CAMPAIGNS, CAMPAIGN_STATS } from '@/lib/mock/mainCampaigns';
+import { MainCampaign, CampaignStats } from '@/types/mainCampaign';
 import { CampaignCard } from './CampaignCard';
 import { FloatingCharacters } from './FloatingCharacters';
 
@@ -10,7 +10,32 @@ export function RadialHero() {
   const [showGuide, setShowGuide] = useState(true);
   const [isHeroHovered, setIsHeroHovered] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
-  const campaigns = MAIN_CAMPAIGNS;
+
+  // Firestore에서 가져온 캠페인 데이터
+  const [campaigns, setCampaigns] = useState<MainCampaign[]>([]);
+  const [stats, setStats] = useState<CampaignStats>({ totalRecruiting: 0, deadlineThisWeek: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 최신 OPEN 캠페인 10개 fetch
+  useEffect(() => {
+    async function fetchCampaigns() {
+      try {
+        const response = await fetch('/api/campaigns/latest?limit=10');
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          setCampaigns(result.data.campaigns || []);
+          setStats(result.data.stats || { totalRecruiting: 0, deadlineThisWeek: 0 });
+        }
+      } catch (error) {
+        console.error('Failed to fetch campaigns:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchCampaigns();
+  }, []);
 
   // 가이드 문구 숨기기
   useEffect(() => {
@@ -134,11 +159,11 @@ export function RadialHero() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm text-gray-600">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            총 <strong className="text-purple-600">{CAMPAIGN_STATS.totalRecruiting}개</strong>의 캠페인이 모집 중
+            총 <strong className="text-purple-600">{stats.totalRecruiting}개</strong>의 캠페인이 모집 중
           </span>
           <span className="hidden sm:block text-gray-300">|</span>
           <span className="flex items-center gap-1.5">
-            🔥 이번 주 마감 <strong className="text-orange-500">{CAMPAIGN_STATS.deadlineThisWeek}건</strong>
+            🔥 이번 주 마감 <strong className="text-orange-500">{stats.deadlineThisWeek}건</strong>
           </span>
         </div>
       </div>

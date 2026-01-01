@@ -1,246 +1,399 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { TopNav, CampaignList } from '@/components/shared';
+import { useCampaigns, Objective, Channel, BudgetRange } from '@/contexts';
 import { getFirebaseAuth } from '@/lib/firebase/auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/StatusBadge';
-import { Search, DollarSign, Clock, Target } from 'lucide-react';
+import { onAuthStateChanged } from 'firebase/auth';
 
-interface Campaign {
-  id: string;
-  title: string;
-  status: 'recruiting';
-  budget: string;
-  duration: string;
-  channel: string;
-  proposal?: {
-    objective: string;
-    target: string;
-    contentType: string;
-  };
-  applicantsCount: number;
-  createdAt: string;
+// ============================================
+// Filter Types
+// ============================================
+
+type ObjectiveFilter = 'all' | Objective;
+type ChannelFilter = 'all' | Channel;
+type BudgetFilter = 'all' | BudgetRange;
+
+// ============================================
+// Filter Chip Component
+// ============================================
+
+interface FilterChipProps {
+  label: string;
+  active: boolean;
+  onClick: () => void;
 }
 
+function FilterChip({ label, active, onClick }: FilterChipProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
+        ${active
+          ? 'bg-purple-600 text-white shadow-md'
+          : 'bg-white text-gray-600 border border-purple-100 hover:border-purple-300 hover:bg-purple-50'
+        }
+      `}
+    >
+      {label}
+    </button>
+  );
+}
+
+// ============================================
+// Filter Section Component
+// ============================================
+
+interface FilterSectionProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+function FilterSection({ title, children }: FilterSectionProps) {
+  return (
+    <div>
+      <h3 className="text-sm font-medium text-gray-700 mb-2">{title}</h3>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
+  );
+}
+
+// ============================================
+// Stats Card Component
+// ============================================
+
+interface StatCardProps {
+  icon: string;
+  label: string;
+  value: number | string;
+  color: string;
+}
+
+function StatCard({ icon, label, value, color }: StatCardProps) {
+  return (
+    <div className="bg-white rounded-2xl border border-purple-100 p-5 hover:shadow-lg hover:border-purple-200 transition-all duration-300">
+      <div className="flex items-center gap-3">
+        <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center text-xl`}>
+          {icon}
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">{label}</p>
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// Influencer Feed Page
+// ============================================
+
 export default function InfluencerFeedPage() {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState({
-    budget: 'all',
-    duration: 'all',
-  });
+  const router = useRouter();
+  const { getOpenCampaigns, getStats, fetchOpenCampaigns, isLoading } = useCampaigns();
+  const [user, setUser] = useState<{ uid: string; displayName: string | null } | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
+  // 필터 상태
+  const [objectiveFilter, setObjectiveFilter] = useState<ObjectiveFilter>('all');
+  const [channelFilter, setChannelFilter] = useState<ChannelFilter>('all');
+  const [budgetFilter, setBudgetFilter] = useState<BudgetFilter>('all');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Firebase Auth 상태 확인
   useEffect(() => {
-    fetchCampaigns();
-  }, []);
+    const auth = getFirebaseAuth();
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const token = await firebaseUser.getIdToken();
+          const response = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          const data = await response.json();
 
-  const fetchCampaigns = async () => {
-    try {
-      const auth = getFirebaseAuth();
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const token = await user.getIdToken();
-
-      const response = await fetch('/api/campaigns/open', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCampaigns(data.data || []);
+          if (data.success && data.data?.role === 'influencer') {
+            setUser({
+              uid: firebaseUser.uid,
+              displayName: data.data.displayName || firebaseUser.displayName,
+            });
+          } else {
+            // 인플루언서가 아니면 메인으로 리다이렉트
+            router.push('/main');
+          }
+        } catch (e) {
+          console.error('Auth error:', e);
+          router.push('/auth/login');
+        }
+      } else {
+        router.push('/auth/login');
       }
-    } catch (error) {
-      console.error('Failed to fetch campaigns:', error);
-    } finally {
-      setLoading(false);
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  // 캠페인 데이터 fetch
+  useEffect(() => {
+    if (user) {
+      fetchOpenCampaigns();
     }
-  };
+  }, [user, fetchOpenCampaigns]);
 
-  const budgetLabels: Record<string, string> = {
-    '<10': '10만원 미만',
-    '10-30': '10-30만원',
-    '30-50': '30-50만원',
-    '50-100': '50-100만원',
-    '100+': '100만원 이상',
-  };
+  // 모든 OPEN 상태 캠페인
+  const openCampaigns = getOpenCampaigns();
+  const stats = getStats();
 
-  const durationLabels: Record<string, string> = {
-    '3days': '3일',
-    '1week': '1주',
-    '2weeks': '2주',
-    '1month': '1개월',
-  };
-
-  const filteredCampaigns = campaigns.filter(campaign => {
-    if (filter.budget !== 'all' && campaign.budget !== filter.budget) return false;
-    if (filter.duration !== 'all' && campaign.duration !== filter.duration) return false;
+  // 필터링
+  const filteredCampaigns = openCampaigns.filter(campaign => {
+    if (objectiveFilter !== 'all' && campaign.objective !== objectiveFilter) return false;
+    if (channelFilter !== 'all' && campaign.channel !== channelFilter) return false;
+    if (budgetFilter !== 'all' && campaign.budgetRange !== budgetFilter) return false;
     return true;
   });
 
-  if (loading) {
+  // 필터 옵션
+  const objectives: { key: ObjectiveFilter; label: string }[] = [
+    { key: 'all', label: '전체' },
+    { key: '인지도', label: '👁️ 인지도' },
+    { key: '방문유도', label: '🔗 방문유도' },
+    { key: '구매전환', label: '💳 구매전환' },
+    { key: '팔로우·구독', label: '❤️ 팔로우·구독' },
+  ];
+
+  const channels: { key: ChannelFilter; label: string }[] = [
+    { key: 'all', label: '전체' },
+    { key: 'Instagram', label: '📸 Instagram' },
+    { key: 'YouTube', label: '🎬 YouTube' },
+    { key: 'TikTok', label: '🎵 TikTok' },
+  ];
+
+  const budgets: { key: BudgetFilter; label: string }[] = [
+    { key: 'all', label: '전체' },
+    { key: '10만 미만', label: '~10만' },
+    { key: '10-30만', label: '10-30만' },
+    { key: '30-50만', label: '30-50만' },
+    { key: '50-100만', label: '50-100만' },
+    { key: '100만+', label: '100만+' },
+  ];
+
+  const activeFiltersCount = [objectiveFilter, channelFilter, budgetFilter].filter(f => f !== 'all').length;
+
+  // 로딩 중
+  if (authLoading || !user) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <p className="text-muted-foreground">로딩 중...</p>
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">로딩 중...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">캠페인 탐색</h1>
-        <p className="text-muted-foreground">
-          모집 중인 {filteredCampaigns.length}개의 캠페인
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50">
+      <TopNav />
 
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            필터
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Budget Filter */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">예산 범위</label>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setFilter({ ...filter, budget: 'all' })}
-                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                  filter.budget === 'all'
-                    ? 'bg-influencer text-influencer-foreground'
-                    : 'bg-muted hover:bg-muted/80'
-                }`}
-              >
-                전체
-              </button>
-              {Object.entries(budgetLabels).map(([value, label]) => (
-                <button
-                  key={value}
-                  onClick={() => setFilter({ ...filter, budget: value })}
-                  className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                    filter.budget === value
-                      ? 'bg-influencer text-influencer-foreground'
-                      : 'bg-muted hover:bg-muted/80'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Duration Filter */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">기간</label>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setFilter({ ...filter, duration: 'all' })}
-                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                  filter.duration === 'all'
-                    ? 'bg-influencer text-influencer-foreground'
-                    : 'bg-muted hover:bg-muted/80'
-                }`}
-              >
-                전체
-              </button>
-              {Object.entries(durationLabels).map(([value, label]) => (
-                <button
-                  key={value}
-                  onClick={() => setFilter({ ...filter, duration: value })}
-                  className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                    filter.duration === value
-                      ? 'bg-influencer text-influencer-foreground'
-                      : 'bg-muted hover:bg-muted/80'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Empty State */}
-      {filteredCampaigns.length === 0 && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="rounded-full bg-influencer/10 p-4 mb-4">
-              <Search className="h-8 w-8 text-influencer" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">모집 중인 캠페인이 없습니다</h3>
-            <p className="text-sm text-muted-foreground text-center max-w-sm">
-              필터를 조정하거나 나중에 다시 확인해주세요.
+      {/* 메인 컨텐츠 */}
+      <main className="pt-24 pb-16 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto">
+          {/* 헤더 */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              안녕하세요, <span className="text-purple-600">{user?.displayName || '크리에이터'}</span>님! 👋
+            </h1>
+            <p className="text-gray-600">
+              지금 참여할 수 있는 캠페인을 찾아보세요
             </p>
-          </CardContent>
-        </Card>
-      )}
+          </div>
 
-      {/* Campaign Grid */}
-      {filteredCampaigns.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCampaigns.map((campaign) => (
-            <Link key={campaign.id} href={`/influencer/campaigns/${campaign.id}`}>
-              <Card className="h-full hover:shadow-lg transition-all duration-200 hover:-translate-y-1 cursor-pointer border-l-4 border-l-influencer">
-                <CardHeader>
-                  <div className="flex items-start justify-between mb-2">
-                    <StatusBadge status="recruiting" />
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(campaign.createdAt).toLocaleDateString('ko-KR', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </span>
-                  </div>
-                  <CardTitle className="line-clamp-2">{campaign.title}</CardTitle>
-                  {campaign.proposal && (
-                    <CardDescription className="flex items-center gap-1 text-xs">
-                      <span className="inline-flex items-center rounded-full bg-influencer/10 px-2 py-0.5 text-influencer">
-                        {campaign.proposal.objective}
-                      </span>
-                    </CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {campaign.proposal && (
-                    <div className="flex items-start gap-2 text-sm">
-                      <Target className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                      <p className="text-muted-foreground line-clamp-2">
-                        {campaign.proposal.target}
-                      </p>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 text-sm">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{budgetLabels[campaign.budget] || campaign.budget}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{durationLabels[campaign.duration] || campaign.duration}</span>
-                  </div>
-                  <div className="pt-2 border-t">
-                    <p className="text-xs text-muted-foreground">
-                      지원자 {campaign.applicantsCount}명
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+          {/* 통계 카드 */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <StatCard
+              icon="📢"
+              label="모집 중인 캠페인"
+              value={stats.totalRecruiting}
+              color="bg-green-100"
+            />
+            <StatCard
+              icon="🔥"
+              label="이번 주 마감"
+              value={stats.deadlineThisWeek}
+              color="bg-orange-100"
+            />
+            <StatCard
+              icon="🎯"
+              label="필터 결과"
+              value={filteredCampaigns.length}
+              color="bg-purple-100"
+            />
+            <StatCard
+              icon="⭐"
+              label="내 지원"
+              value="0건"
+              color="bg-blue-100"
+            />
+          </div>
+
+          {/* 필터 토글 버튼 */}
+          <div className="mb-6">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`
+                inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium
+                transition-all duration-200
+                ${showFilters
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-white text-gray-700 border border-purple-100 hover:border-purple-300'
+                }
+              `}
+            >
+              <span>🔍</span>
+              필터
+              {activeFiltersCount > 0 && (
+                <span className={`px-2 py-0.5 rounded-full text-xs ${
+                  showFilters ? 'bg-purple-500' : 'bg-purple-100 text-purple-600'
+                }`}>
+                  {activeFiltersCount}
+                </span>
+              )}
+            </button>
+
+            {activeFiltersCount > 0 && (
+              <button
+                onClick={() => {
+                  setObjectiveFilter('all');
+                  setChannelFilter('all');
+                  setBudgetFilter('all');
+                }}
+                className="ml-3 text-sm text-purple-600 hover:text-purple-700 hover:underline"
+              >
+                필터 초기화
+              </button>
+            )}
+          </div>
+
+          {/* 필터 패널 */}
+          {showFilters && (
+            <div className="bg-white rounded-2xl border border-purple-100 p-6 mb-8 space-y-6">
+              <FilterSection title="캠페인 목적">
+                {objectives.map(({ key, label }) => (
+                  <FilterChip
+                    key={key}
+                    label={label}
+                    active={objectiveFilter === key}
+                    onClick={() => setObjectiveFilter(key)}
+                  />
+                ))}
+              </FilterSection>
+
+              <FilterSection title="채널">
+                {channels.map(({ key, label }) => (
+                  <FilterChip
+                    key={key}
+                    label={label}
+                    active={channelFilter === key}
+                    onClick={() => setChannelFilter(key)}
+                  />
+                ))}
+              </FilterSection>
+
+              <FilterSection title="예산 범위">
+                {budgets.map(({ key, label }) => (
+                  <FilterChip
+                    key={key}
+                    label={label}
+                    active={budgetFilter === key}
+                    onClick={() => setBudgetFilter(key)}
+                  />
+                ))}
+              </FilterSection>
+            </div>
+          )}
+
+          {/* 캠페인 섹션 */}
+          <section className="bg-white rounded-3xl border border-purple-100 p-6 sm:p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">
+                🔥 모집 중인 캠페인
+                <span className="ml-2 text-purple-600">{filteredCampaigns.length}개</span>
+              </h2>
+            </div>
+
+            <CampaignList
+              campaigns={filteredCampaigns}
+              variant="grid"
+              showStatus={true}
+              showAdvertiser={true}
+              emptyMessage="조건에 맞는 캠페인이 없습니다. 필터를 조정해보세요!"
+              emptyIcon="🔍"
+              columns={3}
+            />
+          </section>
+
+          {/* 퀵 액션 */}
+          <section className="mt-10">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              바로가기
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Link
+                href="/main"
+                className="
+                  flex items-center gap-4 p-5 rounded-2xl
+                  bg-gradient-to-r from-purple-500 to-violet-500
+                  text-white
+                  hover:from-purple-600 hover:to-violet-600
+                  transition-all duration-300
+                  group
+                "
+              >
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                  🏠
+                </div>
+                <div>
+                  <h3 className="font-semibold">메인 페이지</h3>
+                  <p className="text-sm text-purple-100">모든 캠페인 둘러보기</p>
+                </div>
+              </Link>
+
+              <div className="
+                flex items-center gap-4 p-5 rounded-2xl
+                bg-white border border-purple-100
+                opacity-60 cursor-not-allowed
+              ">
+                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-2xl">
+                  📋
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">내 지원 현황</h3>
+                  <p className="text-sm text-gray-500">준비 중...</p>
+                </div>
+              </div>
+
+              <div className="
+                flex items-center gap-4 p-5 rounded-2xl
+                bg-white border border-purple-100
+                opacity-60 cursor-not-allowed
+              ">
+                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-2xl">
+                  👤
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">프로필 관리</h3>
+                  <p className="text-sm text-gray-500">준비 중...</p>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
-      )}
+      </main>
     </div>
   );
 }

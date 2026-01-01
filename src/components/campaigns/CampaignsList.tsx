@@ -74,10 +74,10 @@ export default function CampaignsList() {
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
       'draft': 'bg-gray-500',
-      'pending': 'bg-yellow-500',
+      'pending': 'bg-amber-500',
       'open': 'bg-green-500',
-      'in_progress': 'bg-blue-500',
-      'completed': 'bg-purple-500',
+      'in_progress': 'bg-purple-500',
+      'completed': 'bg-slate-500',
       'cancelled': 'bg-red-500',
     };
     return colors[status] || 'bg-gray-500';

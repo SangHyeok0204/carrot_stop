@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { getFirebaseAuth } from '@/lib/firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 type Role = 'advertiser' | 'influencer' | 'admin';
 
 interface AuthState {
   isLoggedIn: boolean;
   role: Role | null;
+  email: string | null;
 }
 
 const roleLabels: Record<Role, string> = {
@@ -26,23 +29,44 @@ const roleColors: Record<Role, string> = {
 
 export function MainTopNav() {
   const router = useRouter();
-  const [auth, setAuth] = useState<AuthState>({ isLoggedIn: false, role: null });
+  const [auth, setAuth] = useState<AuthState>({ isLoggedIn: false, role: null, email: null });
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setMounted(true);
-    try {
-      const stored = localStorage.getItem('mockAuth');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setAuth({
-          isLoggedIn: parsed.isLoggedIn || false,
-          role: parsed.role || null,
-        });
+
+    const firebaseAuth = getFirebaseAuth();
+    const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
+      if (user) {
+        try {
+          // 사용자 역할 정보 가져오기
+          const token = await user.getIdToken();
+          const response = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          const data = await response.json();
+
+          if (data.success && data.data) {
+            setAuth({
+              isLoggedIn: true,
+              role: data.data.role as Role,
+              email: user.email,
+            });
+          } else {
+            setAuth({ isLoggedIn: true, role: null, email: user.email });
+          }
+        } catch (e) {
+          console.error('Auth fetch error:', e);
+          setAuth({ isLoggedIn: true, role: null, email: user.email });
+        }
+      } else {
+        setAuth({ isLoggedIn: false, role: null, email: null });
       }
-    } catch (e) {
-      console.error('Auth parse error:', e);
-    }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const getMyPagePath = () => {
@@ -58,13 +82,18 @@ export function MainTopNav() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('mockAuth');
-    setAuth({ isLoggedIn: false, role: null });
-    router.refresh();
+  const handleLogout = async () => {
+    try {
+      const firebaseAuth = getFirebaseAuth();
+      await signOut(firebaseAuth);
+      setAuth({ isLoggedIn: false, role: null, email: null });
+      router.push('/main');
+    } catch (e) {
+      console.error('Logout error:', e);
+    }
   };
 
-  if (!mounted) {
+  if (!mounted || loading) {
     return (
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-purple-100">
         <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
