@@ -1,54 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { getFirebaseAuth } from '@/lib/firebase/auth';
-import { onAuthStateChanged } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
-import AnimatedCharacter from '@/components/AnimatedCharacter';
 
 export default function HomePage() {
-  const router = useRouter();
-  const [activeCategory, setActiveCategory] = useState('trending');
   const [isVisible, setIsVisible] = useState<{ [key: string]: boolean }>({});
 
   const observerRef = useRef<IntersectionObserver | null>(null);
-
-  // 로그인 체크 - 로그인된 사용자는 자동 리다이렉트
-  useEffect(() => {
-    const auth = getFirebaseAuth();
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        // 사용자가 로그인되어 있으면 역할 확인 후 리다이렉트
-        try {
-          const token = await user.getIdToken();
-          const response = await fetch('/api/auth/me', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-          const data = await response.json();
-          
-          if (data.success) {
-            const role = data.data.role;
-            if (role === 'admin') {
-              router.push('/admin/dashboard');
-            } else if (role === 'advertiser') {
-              router.push('/advertiser/campaigns');
-            } else if (role === 'influencer') {
-              router.push('/influencer/campaigns');
-            }
-          }
-        } catch (error) {
-          console.error('Auth error:', error);
-        }
-      }
-    });
-
-    return () => unsubscribe();
-  }, [router]);
 
   // 스크롤 애니메이션
   useEffect(() => {
@@ -74,12 +34,6 @@ export default function HomePage() {
     };
   }, []);
 
-  const categories = [
-    { id: 'trending', label: '요즘 대세' },
-    { id: 'popular', label: '인기 플랫폼' },
-    { id: 'enterprise', label: '기업 솔루션' },
-  ];
-
   const stats = [
     { number: '누적', label: '누적 광고 매출' },
     { number: '활성 사용자 수', label: '활성 사용자' },
@@ -94,13 +48,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
-      {/* 움직이는 캐릭터 */}
-      <AnimatedCharacter 
-        size="lg"
-        interactive={true}
-        scrollBased={false}
-      />
-      
       {/* Hero Section - 풀스크린 이미지 */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* 배경 이미지 */}
@@ -155,7 +102,7 @@ export default function HomePage() {
           >
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="text-lg px-8 py-6 bg-white text-primary hover:bg-white/90 shadow-2xl">
-              <Link href="/auth/signup">무료 체험 시작</Link>
+              <Link href="/trial/start">무료 체험 시작</Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6 border-2 border-white text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm shadow-2xl">
               <Link href="/auth/login">로그인</Link>
@@ -219,10 +166,10 @@ export default function HomePage() {
         </div>
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div 
+          <div
             id="platform-title"
             data-animate
-            className={`text-center mb-16 transition-all duration-1000 ${
+            className={`text-center transition-all duration-1000 ${
               isVisible['platform-title'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
             }`}
           >
@@ -230,47 +177,9 @@ export default function HomePage() {
               모든 것을 지원하는 단 하나의 광고 플랫폼
             </h2>
             <p className="text-xl text-white max-w-3xl mx-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] font-medium">
-              기획서 작성부터 자동 운영까지. 모든 채널에서 광고하세요. 
+              기획서 작성부터 자동 운영까지. 모든 채널에서 광고하세요.
               모든 규모의 비즈니스를 지원합니다.
             </p>
-          </div>
-
-          {/* 그리드 이미지 갤러리 */}
-          <div 
-            id="gallery"
-            data-animate
-            className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 transition-all duration-1000 delay-200 ${
-              isVisible['gallery'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-            }`}
-          >
-            {Array.from({ length: 12 }).map((_, index) => (
-              <div
-                key={index}
-                className="aspect-square rounded-lg overflow-hidden bg-background/10 backdrop-blur-sm border border-white/20 hover:border-white/40 transition-all duration-300 cursor-pointer group"
-              >
-                {/* 각 카드 이미지 - public/images/gallery-{index+1}.jpg 에 이미지를 넣으세요 */}
-                <div className="relative w-full h-full">
-                  {/* 이미지를 넣으려면 아래 주석을 해제하고 이미지 경로를 수정하세요 */}
-                  {/* 
-                  <Image
-                    src={`/images/gallery-${index + 1}.jpg`}
-                    alt={`Gallery ${index + 1}`}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                  */}
-                  {/* 이미지가 없을 때 placeholder */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                    <div className="text-center space-y-2">
-                      <div className="text-2xl font-bold text-white/60 group-hover:text-white transition-colors">
-                        {index + 1}
-                      </div>
-                      <div className="text-sm text-white/40">캠페인 예시</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -389,12 +298,6 @@ export default function HomePage() {
               );
             })}
           </div>
-
-          <div className="text-center mt-12">
-            <Button asChild size="lg" className="text-lg px-8 py-6">
-              <Link href="/auth/signup">시작하기</Link>
-            </Button>
-          </div>
         </div>
       </section>
 
@@ -421,7 +324,7 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="text-lg px-8 py-6 bg-white text-primary hover:bg-white/90 shadow-2xl">
-              <Link href="/auth/signup">무료로 시작하기</Link>
+              <Link href="/trial/start">무료로 시작하기</Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6 border-2 border-white text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm shadow-2xl">
               <Link href="/auth/login">로그인</Link>

@@ -5,7 +5,8 @@
       "Bash(powershell -Command \"Get-Process node | Stop-Process -Force\")",
       "Bash(dir:*)",
       "Bash(grep:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npm run dev:*)"
     ]
   }
 }
