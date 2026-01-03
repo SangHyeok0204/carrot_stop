@@ -72,7 +72,7 @@
 
 ### 3단계: 환경변수 파일 생성
 
-프로젝트 루트에 `.env.local` 파일을 생성하세요.
+프로젝트 루트에 `.env.local` 파일을 생성하세요. (공유 금지)
 
 #### Windows (PowerShell)
 ```powershell
