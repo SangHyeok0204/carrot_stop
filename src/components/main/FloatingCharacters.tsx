@@ -2,8 +2,7 @@
 
 export function FloatingCharacters() {
   return (
-    <>
-
+    <>1
       {/* 주변 작은 캐릭터들 */}
       <div
         className="absolute left-[15%] top-[25%] pointer-events-none"
