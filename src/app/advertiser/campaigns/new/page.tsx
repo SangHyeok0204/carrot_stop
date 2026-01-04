@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { TopNav } from '@/components/shared';
-import { useCampaigns, Objective, Channel, BudgetRange, CreateCampaignInput } from '@/contexts';
+import { useCampaigns, Objective, Channel, BudgetRange, CampaignCategory, CreateCampaignInput } from '@/contexts';
 import { getFirebaseAuth } from '@/lib/firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 
@@ -105,6 +105,7 @@ export default function NewCampaignPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [objective, setObjective] = useState<Objective | ''>('');
+  const [category, setCategory] = useState<CampaignCategory | ''>('');
   const [channel, setChannel] = useState<Channel | ''>('');
   const [budgetRange, setBudgetRange] = useState<BudgetRange | ''>('');
   const [deadline, setDeadline] = useState('');
@@ -144,7 +145,7 @@ export default function NewCampaignPage() {
   }, [router]);
 
   // Validation
-  const isStep1Valid = title.trim() && description.trim() && objective;
+  const isStep1Valid = title.trim() && description.trim() && objective && category;
   const isStep2Valid = channel && budgetRange && deadline;
 
   // Options
@@ -169,6 +170,19 @@ export default function NewCampaignPage() {
     { value: '100만+', label: '100만원 이상' },
   ];
 
+  const categories: { value: CampaignCategory; label: string; icon: string }[] = [
+    { value: '카페', label: '카페', icon: '☕' },
+    { value: '음식점', label: '음식점', icon: '🍜' },
+    { value: '바/주점', label: '바/주점', icon: '🍸' },
+    { value: '뷰티/미용', label: '뷰티/미용', icon: '💄' },
+    { value: '패션/의류', label: '패션/의류', icon: '👗' },
+    { value: '스포츠/피트니스', label: '스포츠/피트니스', icon: '🏃' },
+    { value: '페스티벌/행사', label: '페스티벌/행사', icon: '🎪' },
+    { value: '서포터즈', label: '서포터즈', icon: '📣' },
+    { value: '리뷰/체험단', label: '리뷰/체험단', icon: '✍️' },
+    { value: '기타', label: '기타', icon: '📦' },
+  ];
+
   // Handlers
   const handleNext = () => {
     if (step < 3) setStep((prev) => (prev + 1) as FormStep);
@@ -179,7 +193,7 @@ export default function NewCampaignPage() {
   };
 
   const handleSubmit = async () => {
-    if (!user || !objective || !channel || !budgetRange) return;
+    if (!user || !objective || !channel || !budgetRange || !category) return;
 
     setIsSubmitting(true);
 
@@ -190,6 +204,7 @@ export default function NewCampaignPage() {
         objective: objective as Objective,
         channel: channel as Channel,
         budgetRange: budgetRange as BudgetRange,
+        category: category as CampaignCategory,
         deadline,
       };
 
@@ -311,6 +326,23 @@ export default function NewCampaignPage() {
                     ))}
                   </div>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    카테고리 *
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {categories.map(({ value, label, icon }) => (
+                      <OptionButton
+                        key={value}
+                        label={label}
+                        icon={icon}
+                        selected={category === value}
+                        onClick={() => setCategory(value)}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -388,6 +420,12 @@ export default function NewCampaignPage() {
                     <span className="text-gray-500">목적</span>
                     <span className="font-semibold text-gray-900">
                       {objectives.find(o => o.value === objective)?.icon} {objective}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">카테고리</span>
+                    <span className="font-semibold text-gray-900">
+                      {categories.find(c => c.value === category)?.icon} {category}
                     </span>
                   </div>
                   <div className="flex justify-between">

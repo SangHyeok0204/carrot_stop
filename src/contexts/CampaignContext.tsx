@@ -12,6 +12,17 @@ export type CampaignStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 export type Objective = '인지도' | '방문유도' | '구매전환' | '팔로우·구독';
 export type Channel = 'Instagram' | 'YouTube' | 'TikTok';
 export type BudgetRange = '10만 미만' | '10-30만' | '30-50만' | '50-100만' | '100만+';
+export type CampaignCategory =
+  | '카페'
+  | '음식점'
+  | '바/주점'
+  | '뷰티/미용'
+  | '패션/의류'
+  | '스포츠/피트니스'
+  | '페스티벌/행사'
+  | '서포터즈'
+  | '리뷰/체험단'
+  | '기타';
 
 export interface Campaign {
   id: string;
@@ -22,6 +33,7 @@ export interface Campaign {
   objective: Objective;
   channel: Channel;
   budgetRange: BudgetRange;
+  category: CampaignCategory;
   status: CampaignStatus;
   deadline: string;
   createdAt: string;
@@ -35,6 +47,7 @@ export interface CreateCampaignInput {
   objective: Objective;
   channel: Channel;
   budgetRange: BudgetRange;
+  category: CampaignCategory;
   deadline: string;
 }
 
@@ -59,6 +72,8 @@ interface CampaignContextType {
   getCampaignById: (id: string) => Campaign | undefined;
   getCampaignsByAdvertiser: (advertiserId: string) => Campaign[];
   getOpenCampaigns: () => Campaign[];
+  getCampaignsByCategory: (category: CampaignCategory) => Campaign[];
+  searchCampaigns: (query: string) => Campaign[];
 
   // Stats
   getStats: () => {
@@ -152,6 +167,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       objective: apiCampaign.objective || '인지도',
       channel: apiChannelToChannel(apiCampaign.channel),
       budgetRange: apiBudgetToBudgetRange(apiCampaign.budget),
+      category: apiCampaign.category || '기타',
       status: apiCampaign.status || 'OPEN',
       deadline,
       createdAt: apiCampaign.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
@@ -268,6 +284,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
         budget: budgetRangeToApiValue(input.budgetRange),
         duration: durationDays <= 3 ? '3days' : durationDays <= 7 ? '1week' : durationDays <= 14 ? '2weeks' : '1month',
         channel: channelToApiValue(input.channel),
+        category: input.category,
       };
 
       const response = await fetch('/api/campaigns', {
@@ -313,6 +330,27 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     return campaigns.filter(campaign => campaign.status === 'OPEN');
   }, [campaigns]);
 
+  // Get campaigns by category
+  const getCampaignsByCategory = useCallback((category: CampaignCategory) => {
+    return campaigns.filter(
+      campaign => campaign.status === 'OPEN' && campaign.category === category
+    );
+  }, [campaigns]);
+
+  // Search campaigns by query (title, description, category)
+  const searchCampaigns = useCallback((query: string) => {
+    const lowerQuery = query.toLowerCase();
+    return campaigns.filter(campaign => {
+      if (campaign.status !== 'OPEN') return false;
+      return (
+        campaign.title.toLowerCase().includes(lowerQuery) ||
+        campaign.description.toLowerCase().includes(lowerQuery) ||
+        campaign.category.toLowerCase().includes(lowerQuery) ||
+        campaign.advertiserName.toLowerCase().includes(lowerQuery)
+      );
+    });
+  }, [campaigns]);
+
   // Get stats
   const getStats = useCallback(() => {
     const openCampaigns = campaigns.filter(c => c.status === 'OPEN');
@@ -341,6 +379,8 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     getCampaignById,
     getCampaignsByAdvertiser,
     getOpenCampaigns,
+    getCampaignsByCategory,
+    searchCampaigns,
     getStats,
   };
 

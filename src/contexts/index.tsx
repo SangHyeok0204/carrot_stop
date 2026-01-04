@@ -20,6 +20,7 @@ export { CampaignProvider } from './CampaignContext';
 export type {
   Campaign,
   CampaignStatus,
+  CampaignCategory,
   Objective,
   Channel,
   BudgetRange,

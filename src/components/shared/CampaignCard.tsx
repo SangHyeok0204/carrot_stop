@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Campaign, CampaignStatus, Objective, Channel } from '@/contexts';
+import { Campaign, CampaignStatus, Objective, Channel, CampaignCategory } from '@/contexts';
 
 // ============================================
 // Design Tokens
@@ -25,6 +25,19 @@ const channelIcons: Record<Channel, string> = {
   'Instagram': '📸',
   'YouTube': '🎬',
   'TikTok': '🎵',
+};
+
+const categoryIcons: Record<CampaignCategory, string> = {
+  '카페': '☕',
+  '음식점': '🍜',
+  '바/주점': '🍸',
+  '뷰티/미용': '💄',
+  '패션/의류': '👗',
+  '스포츠/피트니스': '🏃',
+  '페스티벌/행사': '🎪',
+  '서포터즈': '📣',
+  '리뷰/체험단': '✍️',
+  '기타': '📦',
 };
 
 const statusConfig: Record<CampaignStatus, { label: string; className: string }> = {
@@ -227,11 +240,17 @@ export function CampaignCard({
 
         {/* 메타 정보 */}
         <div className="space-y-2">
-          {/* 목적 & 예산 */}
-          <div className="flex items-center gap-2">
+          {/* 카테고리 & 목적 */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+              {categoryIcons[campaign.category]} {campaign.category}
+            </span>
             <span className={`px-2.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${gradient} text-white`}>
               {campaign.objective}
             </span>
+          </div>
+          {/* 예산 */}
+          <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">💰 {campaign.budgetRange}</span>
           </div>
 
