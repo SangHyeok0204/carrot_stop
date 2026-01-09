@@ -11,11 +11,19 @@
       "Bash(npm install:*)",
       "WebFetch(domain:kmong.com)",
       "Bash(npm run type-check:*)",
+<<<<<<< HEAD
       "Skill(explain)",
       "Bash(tree:*)",
       "Bash(npm run lint)",
       "Bash(if exist \".next\" rmdir /s /q \".next\")",
       "Bash(npm run build:*)"
+=======
+      "Bash(node:*)",
+      "Bash(npm --version)",
+      "Bash(if exist .next rmdir /s /q .next)",
+      "Bash(powershell -Command:*)",
+      "Bash(findstr:*)"
+>>>>>>> 317478bb4b36459b28617fec1f488678928ea456
     ]
   }
 }
