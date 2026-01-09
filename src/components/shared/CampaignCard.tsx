@@ -7,11 +7,12 @@ import { Campaign, CampaignStatus, Objective, Channel, CampaignCategory } from '
 // Design Tokens
 // ============================================
 
+// 파스텔톤/뉴트럴톤으로 변경 (눈이 편한 색상)
 const objectiveGradients: Record<Objective, string> = {
-  '인지도': 'from-blue-500 to-cyan-400',
-  '방문유도': 'from-purple-500 to-pink-400',
-  '구매전환': 'from-green-500 to-emerald-400',
-  '팔로우·구독': 'from-orange-500 to-amber-400',
+  '인지도': 'from-slate-400 to-slate-300',
+  '방문유도': 'from-purple-300 to-violet-200',
+  '구매전환': 'from-emerald-300 to-teal-200',
+  '팔로우·구독': 'from-amber-300 to-orange-200',
 };
 
 const objectiveIcons: Record<Objective, string> = {

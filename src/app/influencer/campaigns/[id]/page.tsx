@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation';
 
-export default function InfluencerCampaignDetailPage({
+export default async function InfluencerCampaignDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  redirect(`/campaigns/${params.id}`);
+  const { id } = await params;
+  redirect(`/campaigns/${id}`);
 }

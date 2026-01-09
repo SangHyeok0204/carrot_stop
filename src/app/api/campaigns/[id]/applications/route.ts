@@ -4,10 +4,11 @@ import { getCampaignById, createApplication, getCampaignApplications, getUserByI
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const user = await verifyAuth(request);
-  
+
   if (!user) {
     return NextResponse.json(
       { success: false, error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
@@ -16,7 +17,7 @@ export async function GET(
   }
 
   try {
-    const campaign = await getCampaignById(params.id);
+    const campaign = await getCampaignById(id);
     
     if (!campaign) {
       return NextResponse.json(
@@ -33,7 +34,7 @@ export async function GET(
       );
     }
 
-    const applications = await getCampaignApplications(params.id);
+    const applications = await getCampaignApplications(id);
     
     // 인플루언서 정보 포함
     const applicationsWithUsers = await Promise.all(
@@ -73,8 +74,9 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const authCheck = await requireRole(['influencer'])(request);
   if (authCheck) return authCheck;
 
@@ -84,7 +86,7 @@ export async function POST(
     const body = await request.json();
     const { message } = body;
 
-    const campaign = await getCampaignById(params.id);
+    const campaign = await getCampaignById(id);
     
     if (!campaign) {
       return NextResponse.json(
@@ -106,14 +108,14 @@ export async function POST(
       : undefined;
 
     const applicationId = await createApplication({
-      campaignId: params.id,
+      campaignId: id,
       influencerId: user.uid,
       message: filteredMessage,
       status: 'APPLIED',
     });
 
     await createEvent({
-      campaignId: params.id,
+      campaignId: id,
       actorId: user.uid,
       actorRole: 'influencer',
       type: 'application_submitted',
@@ -124,7 +126,7 @@ export async function POST(
       success: true,
       data: {
         applicationId,
-        campaignId: params.id,
+        campaignId: id,
         status: 'APPLIED',
       },
     });

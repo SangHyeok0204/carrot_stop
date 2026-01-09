@@ -5,10 +5,11 @@ import { getUserById } from '@/lib/firebase/firestore';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const user = await verifyAuth(request);
-  
+
   if (!user) {
     return NextResponse.json(
       { success: false, error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
@@ -17,7 +18,7 @@ export async function GET(
   }
 
   try {
-    const campaign = await getCampaignById(params.id);
+    const campaign = await getCampaignById(id);
     
     if (!campaign) {
       return NextResponse.json(
@@ -42,7 +43,7 @@ export async function GET(
     }
 
     // Spec 가져오기
-    const spec = await getCampaignSpec(params.id);
+    const spec = await getCampaignSpec(id);
 
     const response: any = {
       id: campaign.id,
@@ -57,8 +58,8 @@ export async function GET(
     // 광고주 또는 Admin만 applications/submissions 조회 가능
     if ((user.role === 'advertiser' && campaign.advertiserId === user.uid) || user.role === 'admin') {
       const [applications, submissions] = await Promise.all([
-        getCampaignApplications(params.id),
-        getCampaignSubmissions(params.id),
+        getCampaignApplications(id),
+        getCampaignSubmissions(id),
       ]);
 
       // 인플루언서 정보 포함

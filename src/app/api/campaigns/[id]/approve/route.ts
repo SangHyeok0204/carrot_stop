@@ -5,8 +5,9 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const authCheck = await requireRole(['advertiser', 'admin'])(request);
   if (authCheck) return authCheck;
 
@@ -23,7 +24,7 @@ export async function POST(
       );
     }
 
-    const campaign = await getCampaignById(params.id);
+    const campaign = await getCampaignById(id);
     
     if (!campaign) {
       return NextResponse.json(
@@ -42,14 +43,14 @@ export async function POST(
 
     if (action === 'approve') {
       const now = Timestamp.now();
-      await updateCampaign(params.id, {
+      await updateCampaign(id, {
         status: 'OPEN',
         approvedAt: now,
         openedAt: now,
       });
 
       await createEvent({
-        campaignId: params.id,
+        campaignId: id,
         actorId: user.uid,
         actorRole: user.role,
         type: 'campaign_approved',
@@ -58,18 +59,18 @@ export async function POST(
       return NextResponse.json({
         success: true,
         data: {
-          campaignId: params.id,
+          campaignId: id,
           status: 'OPEN',
         },
       });
     } else {
       // reject
-      await updateCampaign(params.id, {
+      await updateCampaign(id, {
         status: 'CANCELLED',
       });
 
       await createEvent({
-        campaignId: params.id,
+        campaignId: id,
         actorId: user.uid,
         actorRole: user.role,
         type: 'campaign_cancelled',
@@ -79,7 +80,7 @@ export async function POST(
       return NextResponse.json({
         success: true,
         data: {
-          campaignId: params.id,
+          campaignId: id,
           status: 'CANCELLED',
         },
       });

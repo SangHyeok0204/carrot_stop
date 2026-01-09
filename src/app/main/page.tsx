@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { TopNav } from '@/components/shared';
 import { CampaignList } from '@/components/shared';
 import { useCampaigns, CampaignCategory } from '@/contexts';
+import { Sidebar } from '@/components/main/Sidebar';
 
 // ============================================
 // Category Data (업종/유형 기반)
@@ -139,7 +140,7 @@ function CategoryFilter() {
 }
 
 // ============================================
-// Campaign Grid Section
+// Campaign Grid Section (다크 배경 적용)
 // ============================================
 
 function CampaignGridSection() {
@@ -152,7 +153,7 @@ function CampaignGridSection() {
 
   if (isLoading) {
     return (
-      <section className="py-12 px-4 bg-white">
+      <section className="py-12 px-4 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-6xl mx-auto text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
           <p className="text-gray-500">캠페인을 불러오는 중...</p>
@@ -162,7 +163,7 @@ function CampaignGridSection() {
   }
 
   return (
-    <section className="py-12 px-4 bg-white">
+    <section className="py-12 px-4 bg-gradient-to-b from-white to-gray-50">
       <div className="max-w-6xl mx-auto">
         {/* 섹션 헤더 */}
         <div className="flex items-center justify-between mb-8">
@@ -197,53 +198,59 @@ function CampaignGridSection() {
 }
 
 // ============================================
-// Features Section
+// Features Section (3개 카드로 변경 + 다크 섹션)
 // ============================================
 
 function FeaturesSection() {
   const features = [
     {
-      icon: '🎯',
-      title: '맞춤 캠페인 매칭',
-      description: '내 채널과 스타일에 맞는 캠페인을 추천받으세요',
-    },
-    {
-      icon: '⚡',
-      title: '빠른 승인 프로세스',
-      description: '신청 후 빠른 검토와 매칭을 경험하세요',
-    },
-    {
-      icon: '💰',
-      title: '투명한 보상 체계',
-      description: '명확한 보상 기준과 빠른 정산',
+      icon: '🎬',
+      title: '숏폼 광고 활성화',
+      description: '광고 트렌드에 맞는 영상 제작 지원',
     },
     {
       icon: '🤝',
-      title: '안전한 거래',
-      description: '플랫폼을 통한 안전한 계약과 보호',
+      title: '인플루언서와의 매칭',
+      description: '인플루언서와의 협업을 위한 통합 툴 제공',
+    },
+    {
+      icon: '🎮',
+      title: '업장 이벤트 생성 AI 도입',
+      description: '간단한 게임을 활용한 이벤트 생성으로 참여와 유입 유도',
     },
   ];
 
   return (
-    <section className="py-20 px-4 bg-gradient-to-b from-purple-50 to-white">
+    <section className="py-20 px-4 bg-gradient-to-b from-gray-900 to-gray-800">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            <span className="bg-gradient-to-r from-purple-600 to-violet-500 bg-clip-text text-transparent">
-              왜 ads platform인가요?
+            <span className="bg-gradient-to-r from-purple-400 to-violet-300 bg-clip-text text-transparent">
+              왜 I:EUM인가요?
             </span>
           </h2>
+          <p className="text-gray-400 text-lg">
+            브랜드와 고객을 잇는 새로운 방법
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-6 border border-purple-100 hover:shadow-lg hover:border-purple-200 transition-all duration-300"
+              className="
+                bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8
+                border border-gray-700
+                hover:border-purple-500/50 hover:bg-gray-800/80
+                transition-all duration-300
+                group
+              "
             >
-              <div className="text-4xl mb-4">{feature.icon}</div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">{feature.title}</h3>
-              <p className="text-gray-600 text-sm">{feature.description}</p>
+              <div className="text-5xl mb-6 group-hover:scale-110 transition-transform duration-300">
+                {feature.icon}
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
+              <p className="text-gray-400 leading-relaxed">{feature.description}</p>
             </div>
           ))}
         </div>
@@ -253,12 +260,12 @@ function FeaturesSection() {
 }
 
 // ============================================
-// CTA Section
+// CTA Section (차콜 배경으로 변경)
 // ============================================
 
 function CTASection() {
   return (
-    <section className="py-20 px-4 bg-gradient-to-r from-purple-600 to-violet-600">
+    <section className="py-20 px-4 bg-gradient-to-r from-purple-600 via-violet-600 to-purple-700">
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
           지금 바로 시작하세요
@@ -269,13 +276,13 @@ function CTASection() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a
             href="/auth/signup"
-            className="px-8 py-4 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 transition-colors"
+            className="px-8 py-4 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 transition-colors shadow-lg"
           >
             무료로 시작하기
           </a>
           <a
             href="/campaigns"
-            className="px-8 py-4 bg-purple-500 text-white font-bold rounded-xl hover:bg-purple-400 transition-colors border border-purple-400"
+            className="px-8 py-4 bg-purple-500/30 text-white font-bold rounded-xl hover:bg-purple-500/50 transition-colors border border-purple-400/50"
           >
             캠페인 둘러보기
           </a>
@@ -290,9 +297,17 @@ function CTASection() {
 // ============================================
 
 export default function MainPage() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+
   return (
     <div className="min-h-screen bg-white">
-      <TopNav transparent />
+      {/* 사이드바 */}
+      <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
+
+      {/* TopNav - 로고 클릭으로 사이드바 열기 (닫힌 상태에서만) */}
+      <TopNav transparent onMenuClick={toggleSidebar} isSidebarOpen={sidebarOpen} />
 
       <SearchBar />
 
@@ -304,9 +319,9 @@ export default function MainPage() {
 
       <CTASection />
 
-      <footer className="py-8 px-4 bg-white border-t border-purple-100">
+      <footer className="py-8 px-4 bg-gray-900 border-t border-gray-800">
         <div className="max-w-6xl mx-auto text-center text-sm text-gray-500">
-          <p>© 2026 ads platform. All rights reserved.</p>
+          <p>© 2026 I:EUM. All rights reserved.</p>
         </div>
       </footer>
     </div>

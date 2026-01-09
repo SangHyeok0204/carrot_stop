@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation';
 
-export default function AdminCampaignDetailPage({
+export default async function AdminCampaignDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  redirect(`/campaigns/${params.id}`);
+  const { id } = await params;
+  redirect(`/campaigns/${id}`);
 }

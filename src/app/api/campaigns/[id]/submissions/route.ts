@@ -5,10 +5,11 @@ import { getAdminFirestore } from '@/lib/firebase/admin';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const user = await verifyAuth(request);
-  
+
   if (!user) {
     return NextResponse.json(
       { success: false, error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
@@ -17,7 +18,7 @@ export async function GET(
   }
 
   try {
-    const campaign = await getCampaignById(params.id);
+    const campaign = await getCampaignById(id);
     
     if (!campaign) {
       return NextResponse.json(
@@ -34,7 +35,7 @@ export async function GET(
       );
     }
 
-    const submissions = await getCampaignSubmissions(params.id);
+    const submissions = await getCampaignSubmissions(id);
 
     return NextResponse.json({
       success: true,
@@ -58,8 +59,9 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const authCheck = await requireRole(['influencer'])(request);
   if (authCheck) return authCheck;
 
@@ -76,8 +78,8 @@ export async function POST(
       );
     }
 
-    const campaign = await getCampaignById(params.id);
-    
+    const campaign = await getCampaignById(id);
+
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: { code: 'NOT_FOUND', message: 'Campaign not found' } },
@@ -87,7 +89,7 @@ export async function POST(
 
     // 선정된 인플루언서인지 확인
     const db = getAdminFirestore();
-    const appSnapshot = await db.collection('campaigns').doc(params.id)
+    const appSnapshot = await db.collection('campaigns').doc(id)
       .collection('applications')
       .where('influencerId', '==', user.uid)
       .where('status', '==', 'SELECTED')
@@ -104,7 +106,7 @@ export async function POST(
     const appId = applicationId || appSnapshot.docs[0].id;
 
     const submissionId = await createSubmission({
-      campaignId: params.id,
+      campaignId: id,
       influencerId: user.uid,
       applicationId: appId,
       postUrl: postUrl.trim(),
@@ -115,7 +117,7 @@ export async function POST(
 
     const { createEvent } = await import('@/lib/firebase/firestore');
     await createEvent({
-      campaignId: params.id,
+      campaignId: id,
       actorId: user.uid,
       actorRole: 'influencer',
       type: 'submission_submitted',
