@@ -41,9 +41,11 @@ const roleConfig: Record<UserRole, { label: string; className: string }> = {
 interface TopNavProps {
   transparent?: boolean;
   className?: string;
+  onMenuClick?: () => void; // 사이드바 열기용 (닫힌 상태에서 로고 클릭)
+  isSidebarOpen?: boolean; // 사이드바 열림 상태
 }
 
-export function TopNav({ transparent = false, className = '' }: TopNavProps) {
+export function TopNav({ transparent = false, className = '', onMenuClick, isSidebarOpen = false }: TopNavProps) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -119,13 +121,26 @@ export function TopNav({ transparent = false, className = '' }: TopNavProps) {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 ${bgClass} border-b border-purple-100 ${className}`}>
       <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
-        {/* 좌측: 로고 */}
-        <Link
-          href="/main"
-          className="text-xl font-bold bg-gradient-to-r from-purple-600 to-violet-500 bg-clip-text text-transparent hover:from-purple-700 hover:to-violet-600 transition-all"
-        >
-          ads platform
-        </Link>
+        {/* 좌측: 로고 (사이드바 닫힌 상태에서 클릭하면 열기) */}
+        <div className="flex items-center gap-3">
+          {/* 로고 - 사이드바가 닫혀있고 onMenuClick이 있으면 버튼으로 동작 */}
+          {onMenuClick && !isSidebarOpen ? (
+            <button
+              onClick={onMenuClick}
+              className="text-xl font-bold bg-gradient-to-r from-purple-600 to-violet-500 bg-clip-text text-transparent hover:from-purple-700 hover:to-violet-600 transition-all"
+              aria-label="사이드바 열기"
+            >
+              I:EUM
+            </button>
+          ) : (
+            <Link
+              href="/main"
+              className="text-xl font-bold bg-gradient-to-r from-purple-600 to-violet-500 bg-clip-text text-transparent hover:from-purple-700 hover:to-violet-600 transition-all"
+            >
+              I:EUM
+            </Link>
+          )}
+        </div>
 
         {/* 우측: 인증 영역 */}
         <div className="flex items-center gap-3">

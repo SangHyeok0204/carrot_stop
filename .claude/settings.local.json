@@ -10,7 +10,12 @@
       "Bash(npm uninstall:*)",
       "Bash(npm install:*)",
       "WebFetch(domain:kmong.com)",
-      "Bash(npm run type-check:*)"
+      "Bash(npm run type-check:*)",
+      "Skill(explain)",
+      "Bash(tree:*)",
+      "Bash(npm run lint)",
+      "Bash(if exist \".next\" rmdir /s /q \".next\")",
+      "Bash(npm run build:*)"
     ]
   }
 }

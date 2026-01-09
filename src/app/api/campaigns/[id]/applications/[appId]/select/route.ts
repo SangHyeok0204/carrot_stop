@@ -5,8 +5,9 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; appId: string } }
+  { params }: { params: Promise<{ id: string; appId: string }> }
 ) {
+  const { id, appId } = await params;
   const authCheck = await requireRole(['advertiser', 'admin'])(request);
   if (authCheck) return authCheck;
 
@@ -23,7 +24,7 @@ export async function POST(
       );
     }
 
-    const campaign = await getCampaignById(params.id);
+    const campaign = await getCampaignById(id);
     
     if (!campaign) {
       return NextResponse.json(
@@ -41,8 +42,8 @@ export async function POST(
     }
 
     const db = getAdminFirestore();
-    const appDoc = await db.collection('campaigns').doc(params.id)
-      .collection('applications').doc(params.appId).get();
+    const appDoc = await db.collection('campaigns').doc(id)
+      .collection('applications').doc(appId).get();
 
     if (!appDoc.exists) {
       return NextResponse.json(
@@ -56,14 +57,14 @@ export async function POST(
 
     if (action === 'select') {
       // 지원 상태를 SELECTED로 변경
-      await updateApplication(params.id, params.appId, {
+      await updateApplication(id, appId, {
         status: 'SELECTED',
         selectedAt: Timestamp.now(),
       });
 
       // 캠페인 상태를 MATCHING에서 RUNNING으로 변경 (선택된 인플루언서가 있으면)
       if (campaign.status === 'MATCHING' || campaign.status === 'OPEN') {
-        await updateCampaign(params.id, {
+        await updateCampaign(id, {
           status: 'RUNNING',
         });
       }
@@ -71,44 +72,44 @@ export async function POST(
       // 선택된 인플루언서 목록에 추가
       const selectedIds = campaign.selectedInfluencerIds || [];
       if (!selectedIds.includes(influencerId)) {
-        await updateCampaign(params.id, {
+        await updateCampaign(id, {
           selectedInfluencerIds: [...selectedIds, influencerId],
         });
       }
 
       await createEvent({
-        campaignId: params.id,
+        campaignId: id,
         actorId: user.uid,
         actorRole: user.role,
         type: 'influencer_selected',
-        payload: { applicationId: params.appId, influencerId },
+        payload: { applicationId: appId, influencerId },
       });
 
       return NextResponse.json({
         success: true,
         data: {
-          applicationId: params.appId,
+          applicationId: appId,
           status: 'SELECTED',
         },
       });
     } else {
       // reject
-      await updateApplication(params.id, params.appId, {
+      await updateApplication(id, appId, {
         status: 'REJECTED',
       });
 
       await createEvent({
-        campaignId: params.id,
+        campaignId: id,
         actorId: user.uid,
         actorRole: user.role,
         type: 'application_rejected',
-        payload: { applicationId: params.appId, influencerId },
+        payload: { applicationId: appId, influencerId },
       });
 
       return NextResponse.json({
         success: true,
         data: {
-          applicationId: params.appId,
+          applicationId: appId,
           status: 'REJECTED',
         },
       });

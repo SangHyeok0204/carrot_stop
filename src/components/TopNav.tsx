@@ -89,7 +89,7 @@ export function TopNav({ role, userEmail, userName }: TopNavProps) {
             href={items[0].href}
             className="text-xl font-bold tracking-tight hover:opacity-80 transition-opacity"
           >
-            ADS Platform
+            I:EUM
           </Link>
 
           {/* Nav Items */}

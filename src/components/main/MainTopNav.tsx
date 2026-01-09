@@ -98,7 +98,7 @@ export function MainTopNav() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-purple-100">
         <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
           <Link href="/main" className="text-xl font-bold text-purple-600">
-            ADS Platform
+            I:EUM
           </Link>
           <div className="w-20 h-9 bg-purple-100 rounded-md animate-pulse" />
         </div>
@@ -114,7 +114,7 @@ export function MainTopNav() {
           href="/main"
           className="text-xl font-bold bg-gradient-to-r from-purple-600 to-violet-500 bg-clip-text text-transparent"
         >
-          ADS Platform
+          I:EUM
         </Link>
 
         {/* 우측 영역 */}

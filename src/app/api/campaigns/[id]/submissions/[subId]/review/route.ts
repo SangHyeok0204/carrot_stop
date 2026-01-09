@@ -5,8 +5,9 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; subId: string } }
+  { params }: { params: Promise<{ id: string; subId: string }> }
 ) {
+  const { id, subId } = await params;
   const authCheck = await requireRole(['advertiser', 'admin'])(request);
   if (authCheck) return authCheck;
 
@@ -23,7 +24,7 @@ export async function POST(
       );
     }
 
-    const campaign = await getCampaignById(params.id);
+    const campaign = await getCampaignById(id);
     
     if (!campaign) {
       return NextResponse.json(
@@ -51,20 +52,20 @@ export async function POST(
       updateData.feedback = feedback;
     }
 
-    await updateSubmission(params.id, params.subId, updateData);
+    await updateSubmission(id, subId, updateData);
 
     await createEvent({
-      campaignId: params.id,
+      campaignId: id,
       actorId: user.uid,
       actorRole: user.role,
       type: action === 'approve' ? 'submission_approved' : 'submission_needs_fix',
-      payload: { submissionId: params.subId },
+      payload: { submissionId: subId },
     });
 
     return NextResponse.json({
       success: true,
       data: {
-        submissionId: params.subId,
+        submissionId: subId,
         status,
       },
     });
