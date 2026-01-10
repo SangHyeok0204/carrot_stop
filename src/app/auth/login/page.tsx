@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getFirebaseAuth } from '@/lib/firebase/auth';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,10 +10,18 @@ import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login, isLoggedIn, isLoading: authLoading, getMyPagePath } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // 이미 로그인된 경우 마이페이지로 리다이렉트
+  useEffect(() => {
+    if (!authLoading && isLoggedIn) {
+      router.replace(getMyPagePath());
+    }
+  }, [authLoading, isLoggedIn, router, getMyPagePath]);
 
   // 이메일/비밀번호 로그인
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -23,20 +30,22 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const auth = getFirebaseAuth();
-      await signInWithEmailAndPassword(auth, email, password);
-      // 성공 시 /main으로 이동
-      router.push('/main');
+      await login(email, password);
+      // 로그인 성공 시 역할에 맞는 페이지로 이동
+      // AuthContext의 onAuthStateChanged가 user를 설정하면
+      // useEffect에서 리다이렉트 처리
     } catch (err: any) {
       // 에러 처리 (기존 UI 에러 영역에 표시)
       if (err.code === 'auth/user-not-found') {
-        setError('가입되지 않은 이메일이에요. 회원가입을 먼저 해주세요! 😊');
+        setError('가입되지 않은 이메일이에요. 회원가입을 먼저 해주세요!');
       } else if (err.code === 'auth/wrong-password') {
-        setError('비밀번호가 올바르지 않아요. 다시 확인해주세요! 🔒');
+        setError('비밀번호가 올바르지 않아요. 다시 확인해주세요!');
       } else if (err.code === 'auth/invalid-email') {
-        setError('이메일 형식이 올바르지 않아요! 📧');
+        setError('이메일 형식이 올바르지 않아요!');
+      } else if (err.code === 'auth/invalid-credential') {
+        setError('이메일 또는 비밀번호가 올바르지 않아요.');
       } else {
-        setError(err.message || '로그인에 실패했어요 😢');
+        setError(err.message || '로그인에 실패했어요.');
       }
     } finally {
       setLoading(false);

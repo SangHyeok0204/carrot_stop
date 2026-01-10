@@ -5,13 +5,20 @@ export type AuthProvider = "password" | "google.com" | "kakao.com" | "naver.com"
 export interface UserProfile {
   // 공통
   photoURL?: string;  // Google 프로필 사진 URL
-  
+  bio?: string;       // 소개글
+  location?: string;  // 위치 (예: 성수, 한남동)
+  websiteUrl?: string; // 웹사이트 URL
+
+  // SNS 링크 (공통)
+  instagramUrl?: string;
+  youtubeUrl?: string;
+
   // 광고주용
   companyName?: string;
-  
+  handle?: string;    // @핸들명 (예: @cafename)
+
   // 인플루언서용
   nickname?: string;  // 활동명/닉네임
-  bio?: string;
   platforms?: string[];
   followerCount?: number;
 }
