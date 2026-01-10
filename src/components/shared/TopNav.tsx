@@ -1,23 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getFirebaseAuth } from '@/lib/firebase/auth';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { useAuth, UserRole } from '@/contexts/AuthContext';
+import { LogoutModal } from '@/components/ui/logout-modal';
 
 // ============================================
 // Types
 // ============================================
-
-type UserRole = 'advertiser' | 'influencer' | 'admin';
-
-interface AuthUser {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  role: UserRole | null;
-}
 
 const roleConfig: Record<UserRole, { label: string; className: string }> = {
   advertiser: {
@@ -41,78 +32,36 @@ const roleConfig: Record<UserRole, { label: string; className: string }> = {
 interface TopNavProps {
   transparent?: boolean;
   className?: string;
-  onMenuClick?: () => void; // 사이드바 열기용 (닫힌 상태에서 로고 클릭)
+  onMenuClick?: () => void; // 로고 클릭 핸들러 (비로그인: 모달, 로그인: 사이드바 열기)
   isSidebarOpen?: boolean; // 사이드바 열림 상태
+  isAuthenticated?: boolean; // 인증 상태 (외부에서 전달받을 경우, 미사용 시 AuthContext 사용)
 }
 
 export function TopNav({ transparent = false, className = '', onMenuClick, isSidebarOpen = false }: TopNavProps) {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading, isLoggedIn, logout, getMyPagePath } = useAuth();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  useEffect(() => {
-    const firebaseAuth = getFirebaseAuth();
-    const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          const token = await firebaseUser.getIdToken();
-          const response = await fetch('/api/auth/me', {
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
-          const data = await response.json();
-
-          if (data.success && data.data) {
-            setUser({
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              displayName: data.data.displayName || firebaseUser.displayName,
-              role: data.data.role as UserRole,
-            });
-          } else {
-            setUser({
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName,
-              role: null,
-            });
-          }
-        } catch (e) {
-          console.error('Auth fetch error:', e);
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
+  // 로그아웃 버튼 클릭 시 모달 열기
+  const handleLogoutClick = useCallback(() => {
+    setShowLogoutModal(true);
   }, []);
 
-  const getMyPagePath = () => {
-    if (!user?.role) return '/main';
-    switch (user.role) {
-      case 'advertiser':
-        return '/advertiser/dashboard';
-      case 'influencer':
-        return '/influencer/feed';
-      case 'admin':
-        return '/admin/dashboard';
-      default:
-        return '/main';
-    }
-  };
-
-  const handleLogout = async () => {
+  // 모달에서 확인 클릭 시 실제 로그아웃 실행
+  const handleLogoutConfirm = useCallback(async () => {
     try {
-      const firebaseAuth = getFirebaseAuth();
-      await signOut(firebaseAuth);
-      setUser(null);
+      await logout();
+      setShowLogoutModal(false);
       router.push('/main');
     } catch (e) {
       console.error('Logout error:', e);
     }
-  };
+  }, [router, logout]);
+
+  // 모달 닫기
+  const handleLogoutCancel = useCallback(() => {
+    setShowLogoutModal(false);
+  }, []);
 
   const bgClass = transparent
     ? 'bg-white/80 backdrop-blur-md'
@@ -121,14 +70,15 @@ export function TopNav({ transparent = false, className = '', onMenuClick, isSid
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 ${bgClass} border-b border-purple-100 ${className}`}>
       <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
-        {/* 좌측: 로고 (사이드바 닫힌 상태에서 클릭하면 열기) */}
+        {/* 좌측: 로고 (사이드바 닫힌 상태에서 클릭 시 핸들러 호출) */}
         <div className="flex items-center gap-3">
           {/* 로고 - 사이드바가 닫혀있고 onMenuClick이 있으면 버튼으로 동작 */}
+          {/* 비로그인 시 → 모달 열기, 로그인 시 → 사이드바 열기 (부모에서 분기 처리) */}
           {onMenuClick && !isSidebarOpen ? (
             <button
               onClick={onMenuClick}
               className="text-xl font-bold bg-gradient-to-r from-purple-600 to-violet-500 bg-clip-text text-transparent hover:from-purple-700 hover:to-violet-600 transition-all"
-              aria-label="사이드바 열기"
+              aria-label={!isLoggedIn ? '로그인 안내' : '사이드바 열기'}
             >
               I:EUM
             </button>
@@ -175,7 +125,7 @@ export function TopNav({ transparent = false, className = '', onMenuClick, isSid
 
               {/* 로그아웃 버튼 */}
               <button
-                onClick={handleLogout}
+                onClick={handleLogoutClick}
                 className="
                   px-3 py-2 rounded-lg
                   text-purple-600 text-sm font-medium
@@ -201,6 +151,13 @@ export function TopNav({ transparent = false, className = '', onMenuClick, isSid
           )}
         </div>
       </div>
+
+      {/* 로그아웃 확인 모달 */}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onConfirm={handleLogoutConfirm}
+        onCancel={handleLogoutCancel}
+      />
     </nav>
   );
 }

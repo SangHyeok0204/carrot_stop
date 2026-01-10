@@ -6,34 +6,31 @@ import { useRouter } from 'next/navigation';
 import { TopNav } from '@/components/shared';
 import { CampaignList } from '@/components/shared';
 import { useCampaigns, CampaignCategory } from '@/contexts';
-import { Sidebar } from '@/components/main/Sidebar';
 
 // ============================================
-// Category Data (업종/유형 기반)
+// Category Data (업종/유형 기반) - 이모지 대신 도형/중립 아이콘 사용
 // ============================================
 
-const categories: { id: CampaignCategory; name: string; icon: string }[] = [
-  { id: '카페', name: '카페', icon: '☕' },
-  { id: '음식점', name: '음식점', icon: '🍜' },
-  { id: '바/주점', name: '바/주점', icon: '🍸' },
-  { id: '뷰티/미용', name: '뷰티/미용', icon: '💄' },
-  { id: '패션/의류', name: '패션/의류', icon: '👗' },
-  { id: '스포츠/피트니스', name: '스포츠', icon: '🏃' },
-  { id: '페스티벌/행사', name: '페스티벌', icon: '🎪' },
-  { id: '서포터즈', name: '서포터즈', icon: '📣' },
-  { id: '리뷰/체험단', name: '리뷰/체험단', icon: '✍️' },
-  { id: '기타', name: '기타', icon: '📦' },
+const categories: { id: CampaignCategory; name: string; color: string }[] = [
+  { id: '카페', name: '카페', color: 'bg-amber-100 text-amber-600' },
+  { id: '음식점', name: '음식점', color: 'bg-orange-100 text-orange-600' },
+  { id: '바/주점', name: '바/주점', color: 'bg-purple-100 text-purple-600' },
+  { id: '뷰티/미용', name: '뷰티/미용', color: 'bg-pink-100 text-pink-600' },
+  { id: '패션/의류', name: '패션/의류', color: 'bg-rose-100 text-rose-600' },
+  { id: '스포츠/피트니스', name: '스포츠', color: 'bg-green-100 text-green-600' },
+  { id: '페스티벌/행사', name: '페스티벌', color: 'bg-violet-100 text-violet-600' },
+  { id: '서포터즈', name: '서포터즈', color: 'bg-blue-100 text-blue-600' },
+  { id: '리뷰/체험단', name: '리뷰/체험단', color: 'bg-teal-100 text-teal-600' },
+  { id: '기타', name: '기타', color: 'bg-slate-100 text-slate-600' },
 ];
 
 // ============================================
-// Search Bar Section
+// Search Bar Section (통계 제거)
 // ============================================
 
 function SearchBar() {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const { getStats } = useCampaigns();
-  const stats = getStats();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -43,13 +40,7 @@ function SearchBar() {
   };
 
   return (
-    <section className="bg-gradient-to-b from-purple-100 via-purple-50 to-white pt-24 pb-12 px-4 relative">
-      {/* 배경 장식 */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-10 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl" />
-        <div className="absolute top-40 right-10 w-80 h-80 bg-violet-200/30 rounded-full blur-3xl" />
-      </div>
-
+    <section className="pt-24 pb-12 px-4 relative">
       <div className="max-w-3xl mx-auto relative z-10">
         {/* 검색바 */}
         <form onSubmit={handleSubmit} className="relative">
@@ -60,7 +51,7 @@ function SearchBar() {
             placeholder="어떤 광고를 찾고 계시나요?"
             className="
               w-full px-6 py-5 pr-14
-              bg-white rounded-2xl
+              bg-white/90 backdrop-blur-sm rounded-2xl
               border-2 border-purple-100
               text-lg text-gray-800
               placeholder:text-gray-400
@@ -84,30 +75,18 @@ function SearchBar() {
             </svg>
           </button>
         </form>
-
-        {/* 모집 현황 */}
-        <div className="flex items-center justify-center gap-4 mt-6 text-sm text-gray-600">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            총 <strong className="text-purple-600">{stats.totalRecruiting}개</strong> 모집 중
-          </span>
-          <span className="text-gray-300">|</span>
-          <span className="flex items-center gap-1.5">
-            🔥 이번 주 마감 <strong className="text-orange-500">{stats.deadlineThisWeek}건</strong>
-          </span>
-        </div>
       </div>
     </section>
   );
 }
 
 // ============================================
-// Category Filter Section
+// Category Filter Section (이모지 대신 컬러 도트)
 // ============================================
 
 function CategoryFilter() {
   return (
-    <section className="py-8 px-4 bg-white">
+    <section className="py-8 px-4">
       <div className="max-w-6xl mx-auto">
         <h2 className="text-lg font-bold text-gray-900 mb-4">카테고리별 캠페인</h2>
         <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 sm:gap-3">
@@ -118,16 +97,17 @@ function CategoryFilter() {
               className="
                 flex flex-col items-center justify-center
                 p-3 sm:p-4 rounded-xl
-                bg-gradient-to-br from-gray-50 to-white
-                border border-gray-100
+                bg-white/80 backdrop-blur-sm
+                border border-purple-50
                 hover:border-purple-300 hover:shadow-md hover:-translate-y-0.5
                 transition-all duration-200
                 group cursor-pointer
               "
             >
-              <span className="text-2xl sm:text-3xl mb-1 group-hover:scale-110 transition-transform">
-                {category.icon}
-              </span>
+              {/* 이모지 대신 컬러 도트 */}
+              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full ${category.color} flex items-center justify-center mb-1 group-hover:scale-110 transition-transform`}>
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-current opacity-60" />
+              </div>
               <span className="text-xs font-medium text-gray-700 group-hover:text-purple-600 transition-colors text-center">
                 {category.name}
               </span>
@@ -140,7 +120,7 @@ function CategoryFilter() {
 }
 
 // ============================================
-// Campaign Grid Section (다크 배경 적용)
+// Campaign Grid Section (4열 그리드로 변경)
 // ============================================
 
 function CampaignGridSection() {
@@ -153,8 +133,8 @@ function CampaignGridSection() {
 
   if (isLoading) {
     return (
-      <section className="py-12 px-4 bg-gradient-to-b from-white to-gray-50">
-        <div className="max-w-6xl mx-auto text-center">
+      <section className="py-12 px-4">
+        <div className="max-w-7xl mx-auto text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
           <p className="text-gray-500">캠페인을 불러오는 중...</p>
         </div>
@@ -163,8 +143,8 @@ function CampaignGridSection() {
   }
 
   return (
-    <section className="py-12 px-4 bg-gradient-to-b from-white to-gray-50">
-      <div className="max-w-6xl mx-auto">
+    <section className="py-12 px-4">
+      <div className="max-w-7xl mx-auto">
         {/* 섹션 헤더 */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -183,14 +163,14 @@ function CampaignGridSection() {
           </Link>
         </div>
 
+        {/* 4열 그리드 */}
         <CampaignList
           campaigns={campaigns}
           variant="grid"
-          columns={3}
+          columns={4}
           showStatus={true}
           showAdvertiser={true}
           emptyMessage="현재 모집 중인 캠페인이 없습니다"
-          emptyIcon="📭"
         />
       </div>
     </section>
@@ -198,25 +178,25 @@ function CampaignGridSection() {
 }
 
 // ============================================
-// Features Section (3개 카드로 변경 + 다크 섹션)
+// Features Section (이모지 대신 도형 아이콘)
 // ============================================
 
 function FeaturesSection() {
   const features = [
     {
-      icon: '🎬',
       title: '숏폼 광고 활성화',
       description: '광고 트렌드에 맞는 영상 제작 지원',
+      iconBg: 'bg-purple-500',
     },
     {
-      icon: '🤝',
       title: '인플루언서와의 매칭',
       description: '인플루언서와의 협업을 위한 통합 툴 제공',
+      iconBg: 'bg-violet-500',
     },
     {
-      icon: '🎮',
       title: '업장 이벤트 생성 AI 도입',
       description: '간단한 게임을 활용한 이벤트 생성으로 참여와 유입 유도',
+      iconBg: 'bg-indigo-500',
     },
   ];
 
@@ -246,8 +226,9 @@ function FeaturesSection() {
                 group
               "
             >
-              <div className="text-5xl mb-6 group-hover:scale-110 transition-transform duration-300">
-                {feature.icon}
+              {/* 이모지 대신 도형 아이콘 */}
+              <div className={`w-14 h-14 ${feature.iconBg} rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                <div className="w-6 h-6 bg-white/30 rounded-lg" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
               <p className="text-gray-400 leading-relaxed">{feature.description}</p>
@@ -260,7 +241,7 @@ function FeaturesSection() {
 }
 
 // ============================================
-// CTA Section (차콜 배경으로 변경)
+// CTA Section
 // ============================================
 
 function CTASection() {
@@ -297,33 +278,31 @@ function CTASection() {
 // ============================================
 
 export default function MainPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-
   return (
-    <div className="min-h-screen bg-white">
-      {/* 사이드바 */}
-      <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50/30">
+      {/* 배경 장식 */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-20 left-10 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl" />
+        <div className="absolute top-60 right-10 w-80 h-80 bg-violet-200/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-40 left-1/3 w-72 h-72 bg-purple-100/20 rounded-full blur-3xl" />
+      </div>
 
-      {/* TopNav - 로고 클릭으로 사이드바 열기 (닫힌 상태에서만) */}
-      <TopNav transparent onMenuClick={toggleSidebar} isSidebarOpen={sidebarOpen} />
+      {/* TopNav */}
+      <TopNav transparent />
 
-      <SearchBar />
+      <div className="relative z-10">
+        <SearchBar />
+        <CategoryFilter />
+        <CampaignGridSection />
+        <FeaturesSection />
+        <CTASection />
 
-      <CategoryFilter />
-
-      <CampaignGridSection />
-
-      <FeaturesSection />
-
-      <CTASection />
-
-      <footer className="py-8 px-4 bg-gray-900 border-t border-gray-800">
-        <div className="max-w-6xl mx-auto text-center text-sm text-gray-500">
-          <p>© 2026 I:EUM. All rights reserved.</p>
-        </div>
-      </footer>
+        <footer className="py-8 px-4 bg-gray-900 border-t border-gray-800">
+          <div className="max-w-6xl mx-auto text-center text-sm text-gray-500">
+            <p>© 2026 I:EUM. All rights reserved.</p>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }

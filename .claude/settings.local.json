@@ -11,19 +11,24 @@
       "Bash(npm install:*)",
       "WebFetch(domain:kmong.com)",
       "Bash(npm run type-check:*)",
-<<<<<<< HEAD
       "Skill(explain)",
       "Bash(tree:*)",
       "Bash(npm run lint)",
       "Bash(if exist \".next\" rmdir /s /q \".next\")",
-      "Bash(npm run build:*)"
-=======
-      "Bash(node:*)",
-      "Bash(npm --version)",
-      "Bash(if exist .next rmdir /s /q .next)",
-      "Bash(powershell -Command:*)",
-      "Bash(findstr:*)"
->>>>>>> 317478bb4b36459b28617fec1f488678928ea456
+      "Bash(npm run build:*)",
+      "mcp__playwright__playwright_navigate",
+      "mcp__playwright__playwright_screenshot",
+      "mcp__playwright__playwright_fill",
+      "mcp__playwright__playwright_click",
+      "Bash(timeout /t 3 /nobreak)",
+      "mcp__playwright__playwright_evaluate",
+      "mcp__playwright__playwright_press_key",
+      "mcp__playwright__playwright_close",
+      "Bash(where:*)",
+      "Bash(findstr:*)",
+      "Bash(del \"C:\\\\Users\\\\adg01\\\\OneDrive\\\\바탕 화면\\\\ads_platform\\\\claude_cli.py\")",
+      "Bash(cmd /c del \"C:\\\\Users\\\\adg01\\\\OneDrive\\\\바탕 화면\\\\ads_platform\\\\claude_cli.py\")",
+      "mcp__github__*"
     ]
   }
 }

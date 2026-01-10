@@ -39,6 +39,7 @@ export interface Campaign {
   createdAt: string;
   applicationsCount: number;
   isHot?: boolean;
+  imageUrl?: string; // 캠페인 대표 이미지 URL
 }
 
 export interface CreateCampaignInput {
@@ -173,6 +174,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       createdAt: apiCampaign.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
       applicationsCount: apiCampaign.applicationsCount || 0,
       isHot,
+      imageUrl: apiCampaign.imageUrl || undefined,
     };
   };
 
