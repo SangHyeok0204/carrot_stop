@@ -149,8 +149,9 @@ export default function InfluencerFeedPage() {
   const openCampaigns = getOpenCampaigns();
   const stats = getStats();
 
-  // 필터링
+  // 필터링 (안전하게 처리)
   const filteredCampaigns = openCampaigns.filter(campaign => {
+    if (!campaign) return false;
     if (objectiveFilter !== 'all' && campaign.objective !== objectiveFilter) return false;
     if (channelFilter !== 'all' && campaign.channel !== channelFilter) return false;
     if (budgetFilter !== 'all' && campaign.budgetRange !== budgetFilter) return false;

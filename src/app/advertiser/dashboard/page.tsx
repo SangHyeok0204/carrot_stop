@@ -345,10 +345,10 @@ export default function AdvertiserDashboardPage() {
     uid: authUser.uid,
     displayName: authUser.displayName,
     email: authUser.email,
-    profile: {
+    profile: authUser.companyName || authUser.photoURL ? {
       companyName: authUser.companyName,
       photoURL: authUser.photoURL,
-    },
+    } : undefined,
   } : null;
 
   // 캠페인 데이터 fetch
@@ -356,7 +356,8 @@ export default function AdvertiserDashboardPage() {
     if (user) {
       fetchMyCampaigns();
     }
-  }, [user, fetchMyCampaigns]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]); // user 객체 대신 user.uid만 dependency로 사용 (무한 루프 방지)
 
   // 팔로우 토글
   const handleFollowToggle = () => {
@@ -372,7 +373,7 @@ export default function AdvertiserDashboardPage() {
   );
 
   // 통계
-  const totalApplications = myCampaigns.reduce((sum, c) => sum + c.applicationsCount, 0);
+  const totalApplications = myCampaigns.reduce((sum, c) => sum + (c.applicationsCount || 0), 0);
 
   // 로딩 중
   if (authLoading || !user) {
