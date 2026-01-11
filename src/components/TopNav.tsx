@@ -67,7 +67,7 @@ export function TopNav({ role, userEmail, userName }: TopNavProps) {
     try {
       const auth = getFirebaseAuth()
       await signOut(auth)
-      router.push("/auth/login")
+      router.push("/main")
     } catch (error) {
       console.error("Logout failed:", error)
     }
@@ -84,10 +84,10 @@ export function TopNav({ role, userEmail, userName }: TopNavProps) {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Left section */}
         <div className="flex items-center gap-8">
-          {/* Logo */}
+          {/* Logo - 항상 /main으로 이동 */}
           <Link
-            href={items[0].href}
-            className="text-xl font-bold tracking-tight hover:opacity-80 transition-opacity"
+            href="/main"
+            className="text-xl font-bold bg-gradient-to-r from-purple-600 to-violet-500 bg-clip-text text-transparent hover:from-purple-700 hover:to-violet-600 transition-all"
           >
             I:EUM
           </Link>

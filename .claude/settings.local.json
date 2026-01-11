@@ -28,7 +28,11 @@
       "Bash(findstr:*)",
       "Bash(del \"C:\\\\Users\\\\adg01\\\\OneDrive\\\\바탕 화면\\\\ads_platform\\\\claude_cli.py\")",
       "Bash(cmd /c del \"C:\\\\Users\\\\adg01\\\\OneDrive\\\\바탕 화면\\\\ads_platform\\\\claude_cli.py\")",
-      "mcp__github__*"
+      "mcp__github__*",
+      "Bash(cd:*)",
+      "mcp__playwright__playwright_get_visible_html",
+      "mcp__playwright__playwright_console_logs",
+      "Bash(curl:*)"
     ]
   }
 }

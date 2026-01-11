@@ -1,32 +1,28 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { MainCampaign } from '@/types/mainCampaign';
+import { Campaign } from '@/contexts';
+import { OBJECTIVE_COLORS } from '@/lib/utils/constants';
 
 interface CampaignCardProps {
-  campaign: MainCampaign;
+  campaign: Campaign;
   style?: React.CSSProperties;
   className?: string;
 }
 
-const objectiveColors: Record<string, string> = {
-  '인지도': 'from-blue-500 to-cyan-400',
-  '방문유도': 'from-purple-500 to-pink-400',
-  '구매전환': 'from-green-500 to-emerald-400',
-  '팔로우·구독': 'from-orange-500 to-amber-400',
+// 채널 아이콘 (RadialHero 특성상 이모지 유지)
+const channelIcons: Record<string, string> = {
+  'Instagram': '📸',
+  'YouTube': '🎬',
+  'TikTok': '🎵',
 };
 
+// 목적 아이콘
 const objectiveIcons: Record<string, string> = {
   '인지도': '👁️',
   '방문유도': '🔗',
   '구매전환': '💳',
   '팔로우·구독': '❤️',
-};
-
-const channelIcons: Record<string, string> = {
-  'Instagram': '📸',
-  'YouTube': '🎬',
-  'TikTok': '🎵',
 };
 
 export function CampaignCard({ campaign, style, className = '' }: CampaignCardProps) {
@@ -36,7 +32,7 @@ export function CampaignCard({ campaign, style, className = '' }: CampaignCardPr
     router.push(`/campaigns/${campaign.id}`);
   };
 
-  const gradient = objectiveColors[campaign.objective] || 'from-gray-500 to-gray-400';
+  const gradient = OBJECTIVE_COLORS[campaign.objective] || 'from-gray-500 to-gray-400';
 
   return (
     <div
