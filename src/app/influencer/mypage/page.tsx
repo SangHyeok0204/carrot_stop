@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { TopNav } from '@/components/shared';
-import { useCampaigns } from '@/contexts';
 import { useAuth } from '@/contexts/AuthContext';
+import { Campaign } from '@/contexts';
 import {
   ProfileCard,
   ProfileUser,
@@ -16,47 +16,60 @@ import {
 } from '@/components/mypage';
 
 // ============================================
-// Floating Action Button (광고주 전용)
+// Floating Action Button (인플루언서 전용 - 캠페인 찾기)
 // ============================================
 
 function FloatingActionButton() {
   return (
     <Link
-      href="/advertiser/campaigns/new"
+      href="/influencer/feed"
       className="
         fixed bottom-6 right-6 z-40
         w-14 h-14 rounded-full
-        bg-purple-600 text-white text-2xl font-light
+        bg-pink-500 text-white
         flex items-center justify-center
-        shadow-lg hover:bg-purple-700
+        shadow-lg hover:bg-pink-600
         active:scale-95 transition-all duration-200
       "
-      aria-label="새 캠페인 만들기"
+      aria-label="캠페인 찾기"
     >
-      +
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
     </Link>
   );
 }
 
 // ============================================
-// Dashboard Page
+// MyPage
 // ============================================
 
-export default function AdvertiserDashboardPage() {
+export default function InfluencerMyPage() {
   const router = useRouter();
-  const { campaigns, fetchMyCampaigns } = useCampaigns();
   const { user: authUser, isLoading: authLoading, isLoggedIn } = useAuth();
+
+  // TODO: 인플루언서 지원 캠페인 데이터 fetch API 연동 필요
+  const [appliedCampaigns, setAppliedCampaigns] = useState<Campaign[]>([]);
+  const [completedCampaigns, setCompletedCampaigns] = useState<Campaign[]>([]);
+  const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(false);
 
   // 인증 및 권한 확인
   useEffect(() => {
     if (!authLoading) {
       if (!isLoggedIn) {
         router.push('/auth/login');
-      } else if (authUser?.role !== 'advertiser') {
+      } else if (authUser?.role !== 'influencer') {
         router.push('/main');
       }
     }
   }, [authLoading, isLoggedIn, authUser, router]);
+
+  // TODO: 인플루언서 지원 캠페인 데이터 fetch
+  useEffect(() => {
+    if (authUser?.uid) {
+      // fetchInfluencerCampaigns();
+    }
+  }, [authUser?.uid]);
 
   // ProfileUser 형태로 변환
   const profileUser: ProfileUser | null = authUser ? {
@@ -65,38 +78,22 @@ export default function AdvertiserDashboardPage() {
     email: authUser.email,
     photoURL: authUser.photoURL,
     bio: authUser.bio,
-    companyName: authUser.companyName,
+    nickname: authUser.nickname,
+    followerCount: authUser.followerCount,
   } : null;
-
-  // 캠페인 데이터 fetch
-  useEffect(() => {
-    if (profileUser) {
-      fetchMyCampaigns();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileUser?.uid]);
 
   // 프로필 수정 핸들러
   const handleEditProfile = () => {
     // TODO: 프로필 편집 페이지/모달로 이동
-    router.push('/advertiser/profile/edit');
+    router.push('/influencer/profile/edit');
   };
-
-  // 캠페인 분류
-  const myCampaigns = campaigns;
-  const activeCampaigns = myCampaigns.filter(
-    (c) => c.status === 'OPEN' || c.status === 'IN_PROGRESS'
-  );
-  const completedCampaigns = myCampaigns.filter(
-    (c) => c.status === 'COMPLETED'
-  );
 
   // 로딩 중
   if (authLoading || !profileUser) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto mb-4" />
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-pink-500 mx-auto mb-4" />
           <p className="text-gray-500 text-sm">로딩 중...</p>
         </div>
       </div>
@@ -113,15 +110,19 @@ export default function AdvertiserDashboardPage() {
           <MyPageHeader onEditClick={handleEditProfile} />
 
           {/* 프로필 카드 */}
-          <ProfileCard user={profileUser} role="advertiser" />
+          <ProfileCard
+            user={profileUser}
+            role="influencer"
+            followerCount={profileUser.followerCount}
+          />
 
-          {/* 브랜드 배너 */}
-          <BrandBanner placeholderText="브랜드 배너" />
+          {/* 포트폴리오 배너 */}
+          <BrandBanner placeholderText="포트폴리오 배너" />
 
-          {/* 진행 중인 캠페인 */}
+          {/* 진행 중인 캠페인 (지원 중 / 선정됨) */}
           <CampaignSection
             title="진행 중인 캠페인"
-            campaigns={activeCampaigns}
+            campaigns={appliedCampaigns}
             emptyMessage="현재 진행 중인 캠페인이 없습니다"
           />
 
@@ -133,7 +134,7 @@ export default function AdvertiserDashboardPage() {
           />
 
           {/* 성과 인사이트 CTA */}
-          <InsightsCTA role="advertiser" />
+          <InsightsCTA role="influencer" />
         </div>
       </main>
 

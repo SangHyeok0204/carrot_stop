@@ -172,7 +172,6 @@ function CampaignGridSection() {
           variant="grid"
           columns={4}
           showStatus={true}
-          showAdvertiser={true}
           emptyMessage="현재 모집 중인 캠페인이 없습니다"
         />
       </div>

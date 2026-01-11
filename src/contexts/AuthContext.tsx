@@ -22,7 +22,9 @@ export interface User {
   role: UserRole;
   companyName?: string; // advertiser
   nickname?: string; // influencer
+  followerCount?: number; // influencer
   photoURL?: string;
+  bio?: string; // 한 줄 소개
 }
 
 // ============================================
@@ -72,7 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role: data.data.role as UserRole,
           companyName: data.data.profile?.companyName,
           nickname: data.data.profile?.nickname,
+          followerCount: data.data.profile?.followerCount,
           photoURL: data.data.profile?.photoURL || fbUser.photoURL || undefined,
+          bio: data.data.profile?.bio,
         };
       }
       return null;
@@ -147,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       case 'advertiser':
         return '/advertiser/dashboard';
       case 'influencer':
-        return '/influencer/feed';
+        return '/influencer/mypage';
       case 'admin':
         return '/admin/dashboard';
       default:

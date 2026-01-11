@@ -11,7 +11,6 @@ interface CampaignListProps {
   campaigns: Campaign[];
   variant?: 'grid' | 'list' | 'compact';
   showStatus?: boolean;
-  showAdvertiser?: boolean;
   emptyMessage?: string;
   emptyIcon?: string;
   columns?: 1 | 2 | 3 | 4;
@@ -26,7 +25,6 @@ export function CampaignList({
   campaigns,
   variant = 'grid',
   showStatus = true,
-  showAdvertiser = false,
   emptyMessage = '캠페인이 없습니다',
   emptyIcon = '📭',
   columns = 3,
@@ -52,7 +50,6 @@ export function CampaignList({
             campaign={campaign}
             variant="compact"
             showStatus={showStatus}
-            showAdvertiser={showAdvertiser}
           />
         ))}
       </div>
@@ -75,7 +72,6 @@ export function CampaignList({
           campaign={campaign}
           variant="default"
           showStatus={showStatus}
-          showAdvertiser={showAdvertiser}
         />
       ))}
     </div>
@@ -92,7 +88,6 @@ interface CampaignSectionProps {
   campaigns: Campaign[];
   variant?: 'grid' | 'list';
   showStatus?: boolean;
-  showAdvertiser?: boolean;
   emptyMessage?: string;
   actionButton?: React.ReactNode;
   className?: string;
@@ -104,7 +99,6 @@ export function CampaignSection({
   campaigns,
   variant = 'grid',
   showStatus = true,
-  showAdvertiser = false,
   emptyMessage,
   actionButton,
   className = '',
@@ -127,7 +121,6 @@ export function CampaignSection({
         campaigns={campaigns}
         variant={variant}
         showStatus={showStatus}
-        showAdvertiser={showAdvertiser}
         emptyMessage={emptyMessage}
       />
     </section>
