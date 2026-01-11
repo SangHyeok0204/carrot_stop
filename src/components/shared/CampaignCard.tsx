@@ -1,51 +1,92 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Campaign, CampaignStatus, CampaignCategory } from '@/contexts';
+import { Campaign, CampaignCategory } from '@/contexts';
+import { Badge } from '@/components/ui/badge';
 
 // ============================================
-// Design Tokens (이모지 대신 컬러 사용)
+// Design Tokens
 // ============================================
 
-// 카테고리별 색상
-const categoryColors: Record<CampaignCategory, { bg: string; text: string; gradient: string }> = {
-  '카페': { bg: 'bg-amber-100', text: 'text-amber-700', gradient: 'from-amber-400 to-orange-300' },
-  '음식점': { bg: 'bg-orange-100', text: 'text-orange-700', gradient: 'from-orange-400 to-red-300' },
-  '바/주점': { bg: 'bg-purple-100', text: 'text-purple-700', gradient: 'from-purple-400 to-violet-300' },
-  '뷰티/미용': { bg: 'bg-pink-100', text: 'text-pink-700', gradient: 'from-pink-400 to-rose-300' },
-  '패션/의류': { bg: 'bg-rose-100', text: 'text-rose-700', gradient: 'from-rose-400 to-pink-300' },
-  '스포츠/피트니스': { bg: 'bg-green-100', text: 'text-green-700', gradient: 'from-green-400 to-emerald-300' },
-  '페스티벌/행사': { bg: 'bg-violet-100', text: 'text-violet-700', gradient: 'from-violet-400 to-purple-300' },
-  '서포터즈': { bg: 'bg-blue-100', text: 'text-blue-700', gradient: 'from-blue-400 to-cyan-300' },
-  '리뷰/체험단': { bg: 'bg-teal-100', text: 'text-teal-700', gradient: 'from-teal-400 to-cyan-300' },
-  '기타': { bg: 'bg-slate-100', text: 'text-slate-700', gradient: 'from-slate-400 to-gray-300' },
+// 카테고리별 그라데이션 (이미지 없을 때 placeholder)
+const categoryGradients: Record<CampaignCategory, string> = {
+  '카페': 'from-amber-400 to-orange-300',
+  '음식점': 'from-orange-400 to-red-300',
+  '바/주점': 'from-purple-400 to-violet-300',
+  '뷰티/미용': 'from-pink-400 to-rose-300',
+  '패션/의류': 'from-rose-400 to-pink-300',
+  '스포츠/피트니스': 'from-green-400 to-emerald-300',
+  '페스티벌/행사': 'from-violet-400 to-purple-300',
+  '서포터즈': 'from-blue-400 to-cyan-300',
+  '리뷰/체험단': 'from-teal-400 to-cyan-300',
+  '기타': 'from-slate-400 to-gray-300',
 };
 
-const statusConfig: Record<CampaignStatus, { label: string; className: string }> = {
-  'OPEN': { label: '모집중', className: 'bg-green-500 text-white' },
-  'IN_PROGRESS': { label: '진행중', className: 'bg-purple-500 text-white' },
-  'COMPLETED': { label: '완료', className: 'bg-slate-400 text-white' },
-  'CANCELLED': { label: '취소됨', className: 'bg-red-400 text-white' },
+// 상태 배지 설정
+const statusConfig: Record<string, { label: string; className: string }> = {
+  'OPEN': { label: '모집중', className: 'bg-green-500 text-white border-green-500' },
+  'IN_PROGRESS': { label: '진행중', className: 'bg-purple-500 text-white border-purple-500' },
+  'RUNNING': { label: '진행중', className: 'bg-purple-500 text-white border-purple-500' },
+  'COMPLETED': { label: '완료', className: 'bg-gray-400 text-white border-gray-400' },
+  'CANCELLED': { label: '취소됨', className: 'bg-red-400 text-white border-red-400' },
+};
+
+// 채널 아이콘
+const ChannelIcon = ({ channel }: { channel: string }) => {
+  const channelLower = channel?.toLowerCase() || '';
+
+  if (channelLower.includes('instagram')) {
+    return (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+      </svg>
+    );
+  }
+
+  if (channelLower.includes('youtube')) {
+    return (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+      </svg>
+    );
+  }
+
+  if (channelLower.includes('tiktok')) {
+    return (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+      </svg>
+    );
+  }
+
+  // 기본 아이콘
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    </svg>
+  );
 };
 
 // ============================================
-// Component
+// Component Props
 // ============================================
 
 interface CampaignCardProps {
   campaign: Campaign;
   variant?: 'default' | 'compact';
   showStatus?: boolean;
-  showAdvertiser?: boolean;
   onClick?: () => void;
   className?: string;
 }
+
+// ============================================
+// CampaignCard Component
+// ============================================
 
 export function CampaignCard({
   campaign,
   variant = 'default',
   showStatus = true,
-  showAdvertiser = false,
   onClick,
   className = '',
 }: CampaignCardProps) {
@@ -59,10 +100,24 @@ export function CampaignCard({
     }
   };
 
-  const categoryColor = categoryColors[campaign.category] || categoryColors['기타'];
-  const status = statusConfig[campaign.status];
+  const gradient = categoryGradients[campaign.category] || categoryGradients['기타'];
+  const status = statusConfig[campaign.status] || statusConfig['OPEN'];
 
-  // Compact variant (for lists)
+  // 마감일 포맷팅
+  const formatDeadline = (deadline: string) => {
+    const date = new Date(deadline);
+    const now = new Date();
+    const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return '마감됨';
+    if (diffDays === 0) return '오늘 마감';
+    if (diffDays <= 7) return `D-${diffDays}`;
+    return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+  };
+
+  // ============================================
+  // Compact Variant (리스트용)
+  // ============================================
   if (variant === 'compact') {
     return (
       <div
@@ -70,47 +125,52 @@ export function CampaignCard({
         className={`
           bg-white rounded-xl border border-gray-100
           p-4 cursor-pointer
-          hover:shadow-md hover:border-purple-200
+          hover:shadow-md hover:border-gray-200
           transition-all duration-200
           flex items-center gap-4
           ${className}
         `}
       >
-        {/* 카테고리 컬러 도트 */}
-        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${categoryColor.gradient} flex items-center justify-center`}>
-          <div className="w-5 h-5 bg-white/40 rounded-lg" />
+        {/* 썸네일 */}
+        <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+          {campaign.imageUrl ? (
+            <img
+              src={campaign.imageUrl}
+              alt={campaign.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className={`w-full h-full bg-gradient-to-br ${gradient}`} />
+          )}
         </div>
 
         {/* 정보 */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-gray-900 truncate">{campaign.title}</h3>
-          </div>
-          <div className="flex items-center gap-3 text-sm text-gray-500">
-            <span className="flex items-center gap-1">
-              <span className={`w-2 h-2 rounded-full ${categoryColor.bg}`} />
-              {campaign.category}
-            </span>
-            <span>{campaign.budgetRange}</span>
+          <h3 className="font-semibold text-gray-900 truncate mb-1">{campaign.title}</h3>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <ChannelIcon channel={campaign.channel} />
+            <span>{formatDeadline(campaign.deadline)}</span>
           </div>
         </div>
 
         {/* 상태 */}
         {showStatus && (
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${status.className}`}>
+          <Badge className={`flex-shrink-0 ${status.className}`}>
             {status.label}
-          </span>
+          </Badge>
         )}
       </div>
     );
   }
 
-  // Default variant (grid cards) - 이미지 배경 포함
+  // ============================================
+  // Default Variant (그리드 카드)
+  // ============================================
   return (
     <div
       onClick={handleClick}
       className={`
-        bg-white rounded-2xl border border-gray-100
+        bg-white rounded-xl border border-gray-100
         overflow-hidden cursor-pointer
         hover:shadow-xl hover:border-purple-200 hover:-translate-y-1
         transition-all duration-300
@@ -122,81 +182,51 @@ export function CampaignCard({
       {/* 상단 이미지/그라데이션 영역 - 전체의 70% */}
       <div className="flex-[0_0_70%] min-h-[200px] relative overflow-hidden">
         {campaign.imageUrl ? (
-          // 실제 이미지가 있는 경우
-          <>
-            <img
-              src={campaign.imageUrl}
-              alt={campaign.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-            {/* 이미지 오버레이 */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-          </>
+          <img
+            src={campaign.imageUrl}
+            alt={campaign.title}
+            className="w-full h-full object-cover"
+          />
         ) : (
-          // 이미지가 없는 경우 카테고리 기반 그라데이션
-          <div className={`w-full h-full bg-gradient-to-br ${categoryColor.gradient}`}>
-            {/* 장식용 도형 */}
+          <div className={`w-full h-full bg-gradient-to-br ${gradient}`}>
             <div className="absolute inset-0 flex items-center justify-center opacity-30">
-              <div className="w-20 h-20 bg-white/30 rounded-full" />
-              <div className="absolute w-12 h-12 bg-white/20 rounded-lg rotate-45" />
+              <div className="w-16 h-16 bg-white/30 rounded-full" />
             </div>
           </div>
         )}
 
-        {/* 상태 배지 (좌상단) */}
+        {/* 상태 배지 */}
         {showStatus && (
-          <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-medium ${status.className}`}>
+          <Badge className={`absolute top-3 left-3 ${status.className}`}>
             {status.label}
-          </span>
+          </Badge>
         )}
-
-        {/* 카테고리 배지 (우상단) */}
-        <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-xs font-medium ${categoryColor.bg} ${categoryColor.text}`}>
-          {campaign.category}
-        </span>
       </div>
 
       {/* 콘텐츠 - 나머지 30% */}
       <div className="flex-1 p-4 space-y-3 flex flex-col justify-between">
         {/* 제목 */}
-        <h3 className="font-bold text-gray-900 line-clamp-2 group-hover:text-purple-600 transition-colors min-h-[2.5rem]">
+        <h3 className="font-bold text-gray-900 line-clamp-1">
           {campaign.title}
         </h3>
 
-        {/* 광고주 */}
-        {showAdvertiser && (
-          <p className="text-sm text-gray-500 flex items-center gap-1.5">
-            <span className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center">
-              <span className="w-2 h-2 rounded-full bg-gray-400" />
-            </span>
-            {campaign.advertiserName}
-          </p>
-        )}
+        {/* 한 줄 요약 */}
+        <p className="text-sm text-gray-500 line-clamp-2 min-h-[2.5rem]">
+          {campaign.description || '캠페인 상세 내용을 확인해보세요.'}
+        </p>
 
         {/* 메타 정보 */}
-        <div className="space-y-2 pt-2 border-t border-gray-50">
-          {/* 예산 */}
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <span className="w-4 h-4 rounded bg-purple-100 flex items-center justify-center">
-              <span className="w-1.5 h-1.5 rounded-sm bg-purple-500" />
-            </span>
-            {campaign.budgetRange}
+        <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+          {/* 채널 아이콘 */}
+          <div className="flex items-center gap-2 text-gray-600">
+            <ChannelIcon channel={campaign.channel} />
+            <span className="text-sm">{campaign.channel}</span>
           </div>
 
-          {/* 마감일 & 지원자 수 */}
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500 flex items-center gap-1.5">
-              <span className="w-4 h-4 rounded bg-gray-100 flex items-center justify-center">
-                <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-              </span>
-              {new Date(campaign.deadline).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })} 마감
-            </span>
-            {campaign.applicationsCount > 0 && (
-              <span className="text-purple-600 font-medium">
-                {campaign.applicationsCount}명 지원
-              </span>
-            )}
-          </div>
+          {/* 마감일 */}
+          <span className="text-sm text-gray-500">
+            {formatDeadline(campaign.deadline)}
+          </span>
         </div>
       </div>
     </div>
@@ -207,11 +237,11 @@ export function CampaignCard({
 // Status Badge (Standalone)
 // ============================================
 
-export function CampaignStatusBadge({ status }: { status: CampaignStatus }) {
-  const config = statusConfig[status];
+export function CampaignStatusBadge({ status }: { status: string }) {
+  const config = statusConfig[status] || statusConfig['OPEN'];
   return (
-    <span className={`px-3 py-1 rounded-full text-xs font-medium ${config.className}`}>
+    <Badge className={config.className}>
       {config.label}
-    </span>
+    </Badge>
   );
 }

@@ -19,9 +19,10 @@ export default function LoginPage() {
   // 이미 로그인된 경우 마이페이지로 리다이렉트
   useEffect(() => {
     if (!authLoading && isLoggedIn) {
-      router.replace(getMyPagePath());
+      router.replace('/main');
     }
-  }, [authLoading, isLoggedIn, router, getMyPagePath]);
+  }, [authLoading, isLoggedIn, router]);
+
 
   // 이메일/비밀번호 로그인
   const handleEmailLogin = async (e: React.FormEvent) => {

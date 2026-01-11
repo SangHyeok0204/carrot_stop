@@ -157,7 +157,6 @@ export default function CategoryPage() {
               variant="grid"
               columns={3}
               showStatus={true}
-              showAdvertiser={true}
               emptyMessage={`${currentCategory.name} 카테고리에 모집 중인 캠페인이 없습니다`}
               emptyIcon="📭"
             />

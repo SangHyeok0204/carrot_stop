@@ -331,7 +331,6 @@ export default function InfluencerFeedPage() {
               campaigns={filteredCampaigns}
               variant="grid"
               showStatus={true}
-              showAdvertiser={true}
               emptyMessage="조건에 맞는 캠페인이 없습니다. 필터를 조정해보세요!"
               emptyIcon="🔍"
               columns={3}
