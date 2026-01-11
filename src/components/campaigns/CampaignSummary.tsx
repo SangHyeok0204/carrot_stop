@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 // ============================================
 // Campaign Summary Component
 // 핵심 요약 정보 - "지원 여부를 바로 판단하는 영역"
+// 반드시 이 순서: 제목 → 한 줄 설명 → 보상/예산 → 일정 → 채널 → 상태
 // ============================================
 
 interface CampaignSummaryProps {
@@ -20,8 +21,8 @@ interface CampaignSummaryProps {
 // 상태 설정
 const statusConfig: Record<string, { label: string; className: string }> = {
   'OPEN': { label: '모집중', className: 'bg-green-500 text-white' },
-  'IN_PROGRESS': { label: '진행중', className: 'bg-purple-500 text-white' },
-  'RUNNING': { label: '진행중', className: 'bg-purple-500 text-white' },
+  'IN_PROGRESS': { label: '진행중', className: 'bg-blue-500 text-white' },
+  'RUNNING': { label: '진행중', className: 'bg-blue-500 text-white' },
   'MATCHING': { label: '매칭중', className: 'bg-blue-500 text-white' },
   'COMPLETED': { label: '완료', className: 'bg-gray-400 text-white' },
   'CANCELLED': { label: '취소됨', className: 'bg-red-400 text-white' },
@@ -87,81 +88,81 @@ export function CampaignSummary({
 
   return (
     <div className="space-y-4">
-      {/* 상태 배지 */}
-      <div className="flex items-center gap-2">
-        <Badge className={statusStyle.className}>{statusStyle.label}</Badge>
-        {category && (
-          <Badge variant="outline" className="text-gray-600">{category}</Badge>
-        )}
+      {/* 1. 캠페인 제목 */}
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <Badge className={statusStyle.className}>{statusStyle.label}</Badge>
+          {category && (
+            <Badge variant="outline" className="text-gray-600">{category}</Badge>
+          )}
+        </div>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+          {title}
+        </h1>
       </div>
 
-      {/* 제목 */}
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-        {title}
-      </h1>
-
-      {/* 한 줄 설명 */}
+      {/* 2. 한 줄 설명 */}
       {description && (
         <p className="text-gray-600 text-lg">
           {description}
         </p>
       )}
 
-      {/* 핵심 정보 그리드 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+      {/* 3-6. 핵심 정보 그리드 (보상/예산 → 일정 → 채널 → 상태) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
         {/* 보상/예산 */}
         {budget && (
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
               <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-gray-500">보상</p>
-              <p className="font-semibold text-gray-900">{budget}</p>
+              <p className="font-semibold text-gray-900 truncate">{budget}</p>
             </div>
           </div>
         )}
 
-        {/* 마감일 */}
+        {/* 일정(마감일 또는 기간) */}
         {deadline && (
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
               <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-gray-500">마감</p>
-              <p className="font-semibold text-gray-900">{formatDeadline(deadline)}</p>
+              <p className="font-semibold text-gray-900 truncate">{formatDeadline(deadline)}</p>
             </div>
           </div>
         )}
 
-        {/* 채널 */}
+        {/* 진행 채널 */}
         {channel && (
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
               <ChannelIcon channel={channel} />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-gray-500">채널</p>
-              <p className="font-semibold text-gray-900">{channel}</p>
+              <p className="font-semibold text-gray-900 truncate">{channel}</p>
             </div>
           </div>
         )}
 
-        {/* 상태 */}
+        {/* 캠페인 상태 */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0">
             <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-xs text-gray-500">상태</p>
-            <p className="font-semibold text-gray-900">{statusStyle.label}</p>
+            <p className="font-semibold text-gray-900 truncate">{statusStyle.label}</p>
           </div>
         </div>
       </div>

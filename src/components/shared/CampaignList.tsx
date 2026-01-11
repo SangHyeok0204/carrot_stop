@@ -11,6 +11,7 @@ interface CampaignListProps {
   campaigns: Campaign[];
   variant?: 'grid' | 'list' | 'compact';
   showStatus?: boolean;
+  showAdvertiser?: boolean;
   emptyMessage?: string;
   emptyIcon?: string;
   columns?: 1 | 2 | 3 | 4;
@@ -25,6 +26,7 @@ export function CampaignList({
   campaigns,
   variant = 'grid',
   showStatus = true,
+  showAdvertiser = false,
   emptyMessage = '캠페인이 없습니다',
   emptyIcon = '📭',
   columns = 3,
@@ -50,6 +52,7 @@ export function CampaignList({
             campaign={campaign}
             variant="compact"
             showStatus={showStatus}
+            showAdvertiser={showAdvertiser}
           />
         ))}
       </div>
@@ -72,6 +75,7 @@ export function CampaignList({
           campaign={campaign}
           variant="default"
           showStatus={showStatus}
+          showAdvertiser={showAdvertiser}
         />
       ))}
     </div>

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getFirebaseAuth } from '@/lib/firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
-import { TopNav } from '@/components/TopNav';
+import { TopNav } from '@/components/shared/TopNav';
 import { UserRole } from '@/types/user';
 
 // ============================================
@@ -97,11 +97,7 @@ export function RoleProtectedLayout({
 
   return (
     <div className="min-h-screen bg-background">
-      <TopNav
-        role={requiredRole}
-        userEmail={user.email}
-        userName={user.displayName}
-      />
+      <TopNav />
       <main>{children}</main>
     </div>
   );

@@ -1,34 +1,47 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Campaign, CampaignCategory } from '@/contexts';
+import { Campaign } from '@/contexts';
 import { Badge } from '@/components/ui/badge';
+
+// ============================================
+// Types
+// ============================================
+
+interface CampaignCardProps {
+  campaign: Campaign;
+  variant?: 'default' | 'compact';
+  showStatus?: boolean;
+  showAdvertiser?: boolean;
+  onClick?: () => void;
+  className?: string;
+}
 
 // ============================================
 // Design Tokens
 // ============================================
 
-// 카테고리별 그라데이션 (이미지 없을 때 placeholder)
-const categoryGradients: Record<CampaignCategory, string> = {
-  '카페': 'from-amber-400 to-orange-300',
-  '음식점': 'from-orange-400 to-red-300',
-  '바/주점': 'from-purple-400 to-violet-300',
-  '뷰티/미용': 'from-pink-400 to-rose-300',
-  '패션/의류': 'from-rose-400 to-pink-300',
-  '스포츠/피트니스': 'from-green-400 to-emerald-300',
-  '페스티벌/행사': 'from-violet-400 to-purple-300',
-  '서포터즈': 'from-blue-400 to-cyan-300',
-  '리뷰/체험단': 'from-teal-400 to-cyan-300',
-  '기타': 'from-slate-400 to-gray-300',
-};
-
 // 상태 배지 설정
 const statusConfig: Record<string, { label: string; className: string }> = {
-  'OPEN': { label: '모집중', className: 'bg-green-500 text-white border-green-500' },
-  'IN_PROGRESS': { label: '진행중', className: 'bg-purple-500 text-white border-purple-500' },
-  'RUNNING': { label: '진행중', className: 'bg-purple-500 text-white border-purple-500' },
-  'COMPLETED': { label: '완료', className: 'bg-gray-400 text-white border-gray-400' },
-  'CANCELLED': { label: '취소됨', className: 'bg-red-400 text-white border-red-400' },
+  'OPEN': { label: '모집중', className: 'bg-green-500 text-white' },
+  'IN_PROGRESS': { label: '진행중', className: 'bg-blue-500 text-white' },
+  'RUNNING': { label: '진행중', className: 'bg-blue-500 text-white' },
+  'COMPLETED': { label: '완료', className: 'bg-gray-400 text-white' },
+  'CANCELLED': { label: '취소됨', className: 'bg-red-400 text-white' },
+};
+
+// 카테고리별 placeholder 색상
+const categoryPlaceholders: Record<string, string> = {
+  '카페': 'bg-amber-100',
+  '음식점': 'bg-orange-100',
+  '바/주점': 'bg-purple-100',
+  '뷰티/미용': 'bg-pink-100',
+  '패션/의류': 'bg-rose-100',
+  '스포츠/피트니스': 'bg-green-100',
+  '페스티벌/행사': 'bg-violet-100',
+  '서포터즈': 'bg-blue-100',
+  '리뷰/체험단': 'bg-teal-100',
+  '기타': 'bg-gray-100',
 };
 
 // 채널 아이콘
@@ -59,25 +72,12 @@ const ChannelIcon = ({ channel }: { channel: string }) => {
     );
   }
 
-  // 기본 아이콘
   return (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
     </svg>
   );
 };
-
-// ============================================
-// Component Props
-// ============================================
-
-interface CampaignCardProps {
-  campaign: Campaign;
-  variant?: 'default' | 'compact';
-  showStatus?: boolean;
-  onClick?: () => void;
-  className?: string;
-}
 
 // ============================================
 // CampaignCard Component
@@ -87,6 +87,7 @@ export function CampaignCard({
   campaign,
   variant = 'default',
   showStatus = true,
+  showAdvertiser = false,
   onClick,
   className = '',
 }: CampaignCardProps) {
@@ -100,8 +101,8 @@ export function CampaignCard({
     }
   };
 
-  const gradient = categoryGradients[campaign.category] || categoryGradients['기타'];
   const status = statusConfig[campaign.status] || statusConfig['OPEN'];
+  const placeholderColor = categoryPlaceholders[campaign.category] || categoryPlaceholders['기타'];
 
   // 마감일 포맷팅
   const formatDeadline = (deadline: string) => {
@@ -123,16 +124,16 @@ export function CampaignCard({
       <div
         onClick={handleClick}
         className={`
-          bg-white rounded-xl border border-gray-100
+          bg-white rounded-lg border border-gray-200
           p-4 cursor-pointer
-          hover:shadow-md hover:border-gray-200
+          hover:shadow-md hover:border-gray-300
           transition-all duration-200
           flex items-center gap-4
           ${className}
         `}
       >
         {/* 썸네일 */}
-        <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+        <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
           {campaign.imageUrl ? (
             <img
               src={campaign.imageUrl}
@@ -140,25 +141,34 @@ export function CampaignCard({
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className={`w-full h-full bg-gradient-to-br ${gradient}`} />
+            <div className={`w-full h-full ${placeholderColor} flex items-center justify-center`}>
+              <span className="text-2xl text-gray-400">📷</span>
+            </div>
           )}
         </div>
 
         {/* 정보 */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 truncate mb-1">{campaign.title}</h3>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <ChannelIcon channel={campaign.channel} />
+          <div className="flex items-center gap-2 mb-1">
+            {showStatus && (
+              <Badge className={`${status.className} text-xs`}>
+                {status.label}
+              </Badge>
+            )}
+            <h3 className="font-semibold text-gray-900 truncate">{campaign.title}</h3>
+          </div>
+          <p className="text-sm text-gray-600 line-clamp-1 mb-2">
+            {campaign.description || '캠페인 상세 내용을 확인해보세요.'}
+          </p>
+          <div className="flex items-center gap-3 text-xs text-gray-500">
+            <div className="flex items-center gap-1">
+              <ChannelIcon channel={campaign.channel} />
+              <span>{campaign.channel}</span>
+            </div>
+            <span>•</span>
             <span>{formatDeadline(campaign.deadline)}</span>
           </div>
         </div>
-
-        {/* 상태 */}
-        {showStatus && (
-          <Badge className={`flex-shrink-0 ${status.className}`}>
-            {status.label}
-          </Badge>
-        )}
       </div>
     );
   }
@@ -170,17 +180,16 @@ export function CampaignCard({
     <div
       onClick={handleClick}
       className={`
-        bg-white rounded-xl border border-gray-100
+        bg-white rounded-lg border border-gray-200
         overflow-hidden cursor-pointer
-        hover:shadow-xl hover:border-purple-200 hover:-translate-y-1
-        transition-all duration-300
-        group
-        flex flex-col
+        hover:shadow-lg hover:border-gray-300
+        transition-all duration-200
+        flex flex-col h-full
         ${className}
       `}
     >
-      {/* 상단 이미지/그라데이션 영역 - 전체의 70% */}
-      <div className="flex-[0_0_70%] min-h-[200px] relative overflow-hidden">
+      {/* 썸네일 이미지 */}
+      <div className="relative w-full h-48 overflow-hidden">
         {campaign.imageUrl ? (
           <img
             src={campaign.imageUrl}
@@ -188,42 +197,41 @@ export function CampaignCard({
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className={`w-full h-full bg-gradient-to-br ${gradient}`}>
-            <div className="absolute inset-0 flex items-center justify-center opacity-30">
-              <div className="w-16 h-16 bg-white/30 rounded-full" />
-            </div>
+          <div className={`w-full h-full ${placeholderColor} flex items-center justify-center`}>
+            <span className="text-4xl text-gray-300">📷</span>
           </div>
         )}
 
-        {/* 상태 배지 */}
+        {/* 상태 배지 (좌상단) */}
         {showStatus && (
-          <Badge className={`absolute top-3 left-3 ${status.className}`}>
-            {status.label}
-          </Badge>
+          <div className="absolute top-3 left-3">
+            <Badge className={status.className}>
+              {status.label}
+            </Badge>
+          </div>
         )}
       </div>
 
-      {/* 콘텐츠 - 나머지 30% */}
-      <div className="flex-1 p-4 space-y-3 flex flex-col justify-between">
+      {/* 콘텐츠 */}
+      <div className="flex-1 p-4 flex flex-col">
         {/* 제목 */}
-        <h3 className="font-bold text-gray-900 line-clamp-1">
+        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 min-h-[2.5rem]">
           {campaign.title}
         </h3>
 
-        {/* 한 줄 요약 */}
-        <p className="text-sm text-gray-500 line-clamp-2 min-h-[2.5rem]">
+        {/* 한 줄 요약 (1-2줄) */}
+        <p className="text-sm text-gray-600 line-clamp-2 mb-3 flex-1">
           {campaign.description || '캠페인 상세 내용을 확인해보세요.'}
         </p>
 
-        {/* 메타 정보 */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-          {/* 채널 아이콘 */}
-          <div className="flex items-center gap-2 text-gray-600">
+        {/* 메타 정보 (한 줄) - 예산 OR 채널 중 하나만 */}
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
             <ChannelIcon channel={campaign.channel} />
-            <span className="text-sm">{campaign.channel}</span>
+            <span>{campaign.channel}</span>
           </div>
 
-          {/* 마감일 */}
+          {/* 일정 정보 */}
           <span className="text-sm text-gray-500">
             {formatDeadline(campaign.deadline)}
           </span>

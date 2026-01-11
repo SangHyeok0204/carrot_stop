@@ -98,6 +98,8 @@ export default function CampaignDetailPage() {
       const firebaseUser = auth.currentUser;
 
       let token: string | null = null;
+      let userData: any = null;
+      
       if (firebaseUser) {
         token = await firebaseUser.getIdToken();
 
@@ -105,7 +107,7 @@ export default function CampaignDetailPage() {
         const userResponse = await fetch('/api/auth/me', {
           headers: { 'Authorization': `Bearer ${token}` },
         });
-        const userData = await userResponse.json();
+        userData = await userResponse.json();
         if (userData.success) {
           setUser(userData.data);
         }
@@ -124,9 +126,9 @@ export default function CampaignDetailPage() {
         setCampaign(campaignData.data);
 
         // 인플루언서인 경우 이미 지원했는지 확인
-        if (user?.role === 'influencer' && campaignData.data.applications) {
+        if (userData?.success && userData.data?.role === 'influencer' && campaignData.data.applications) {
           const applied = campaignData.data.applications.some(
-            (app: any) => app.influencerId === user.id
+            (app: any) => app.influencerId === userData.data.id
           );
           setHasApplied(applied);
         }
@@ -232,7 +234,7 @@ export default function CampaignDetailPage() {
     <div className="min-h-screen bg-gray-50">
       <TopNav />
 
-      {/* 뒤로가기 버튼 (이미지 위에 오버레이) */}
+      {/* 뒤로가기 버튼 */}
       <button
         onClick={() => router.back()}
         className="fixed top-20 left-4 z-30 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
@@ -242,7 +244,7 @@ export default function CampaignDetailPage() {
         </svg>
       </button>
 
-      {/* 이미지 갤러리 */}
+      {/* 상단: 이미지 갤러리 */}
       <div className="pt-16">
         <ImageGallery
           mainImage={campaign.imageUrl}
@@ -257,7 +259,7 @@ export default function CampaignDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* 좌측: 메인 정보 */}
           <div className="lg:col-span-2 space-y-6">
-            {/* 핵심 요약 */}
+            {/* 이미지 바로 아래: 핵심 요약 정보 */}
             <CampaignSummary
               title={campaign.title}
               description={description.slice(0, 100) + (description.length > 100 ? '...' : '')}
@@ -268,7 +270,7 @@ export default function CampaignDetailPage() {
               category={campaign.category}
             />
 
-            {/* 광고주 정보 */}
+            {/* 회사(광고주) 요약 & 신뢰 요소 */}
             <AdvertiserCard
               name={campaign.advertiserName || '광고주'}
               advertiserId={campaign.advertiserId}
@@ -279,7 +281,7 @@ export default function CampaignDetailPage() {
               description={description}
             />
 
-            {/* 인플루언서 조건 */}
+            {/* 구하고자 하는 인플루언서 상 */}
             <InfluencerRequirements
               platforms={campaign.spec?.recommended_content_types?.map(t => t.platform)}
               contentStyle={campaign.spec?.tone_and_mood}
@@ -288,7 +290,7 @@ export default function CampaignDetailPage() {
               interests={campaign.spec?.target_audience?.interests}
             />
 
-            {/* 진행 방식 */}
+            {/* 진행 방식 & 제출물 안내 */}
             <ProcessGuide
               contentTypes={campaign.spec?.recommended_content_types}
               estimatedDays={campaign.spec?.schedule?.estimated_duration_days}
@@ -296,11 +298,11 @@ export default function CampaignDetailPage() {
               mustNot={campaign.spec?.constraints?.must_not}
             />
 
-            {/* TODO: 리뷰/성과 섹션 */}
+            {/* TODO: 리뷰 / 이전 캠페인 성과 */}
             {/* <CampaignReviews /> */}
           </div>
 
-          {/* 우측: 고정 CTA */}
+          {/* 우측: 고정 CTA (데스크탑) */}
           <FixedCTA
             campaignId={campaign.id}
             status={campaign.status}
