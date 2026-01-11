@@ -12,7 +12,8 @@ import { MainCampaign, Objective, BudgetRange, Channel } from '@/types/mainCampa
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 20);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 50);
+    const cursor = searchParams.get('cursor');
 
     const db = getAdminFirestore();
 
@@ -78,11 +79,27 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    // 최신순 정렬 후 limit 적용, _sortTime 필드 제거
-    const campaigns: MainCampaign[] = allCampaigns
-      .sort((a, b) => b._sortTime - a._sortTime)
-      .slice(0, limit)
+    // 최신순 정렬
+    const sortedCampaigns = allCampaigns.sort((a, b) => b._sortTime - a._sortTime);
+    
+    // cursor가 있으면 해당 위치부터 시작
+    let startIndex = 0;
+    if (cursor) {
+      const cursorIndex = sortedCampaigns.findIndex(c => c.id === cursor);
+      if (cursorIndex >= 0) {
+        startIndex = cursorIndex + 1;
+      }
+    }
+    
+    // limit 적용, _sortTime 필드 제거
+    const campaigns: MainCampaign[] = sortedCampaigns
+      .slice(startIndex, startIndex + limit)
       .map(({ _sortTime, ...campaign }) => campaign);
+    
+    // 다음 cursor 계산
+    const nextCursor = campaigns.length === limit && startIndex + limit < sortedCampaigns.length
+      ? campaigns[campaigns.length - 1].id
+      : null;
 
     // 통계 계산 (전체 OPEN 캠페인 기준)
     const stats = {
@@ -95,6 +112,7 @@ export async function GET(request: NextRequest) {
       data: {
         campaigns,
         stats,
+        nextCursor,
       },
     });
   } catch (error: any) {

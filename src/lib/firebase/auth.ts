@@ -56,10 +56,12 @@ export function getFirebaseAuth(): Auth {
     return auth;
   }
   auth = getAuth(getFirebaseApp());
-
+  
+  // 메모리 기반 persistence 설정 (페이지 새로고침 시 자동 로그아웃)
   setPersistence(auth, inMemoryPersistence).catch((error) => {
     console.error('Failed to set auth persistence:', error);
   });
+  
   return auth;
 }
 

@@ -172,13 +172,15 @@ export function CampaignCard({
       className={`
         bg-white rounded-xl border border-gray-100
         overflow-hidden cursor-pointer
-        hover:shadow-lg hover:border-gray-200
-        transition-all duration-200
+        hover:shadow-xl hover:border-purple-200 hover:-translate-y-1
+        transition-all duration-300
+        group
+        flex flex-col
         ${className}
       `}
     >
-      {/* 썸네일 영역 */}
-      <div className="aspect-[4/3] relative overflow-hidden">
+      {/* 상단 이미지/그라데이션 영역 - 전체의 70% */}
+      <div className="flex-[0_0_70%] min-h-[200px] relative overflow-hidden">
         {campaign.imageUrl ? (
           <img
             src={campaign.imageUrl}
@@ -201,8 +203,8 @@ export function CampaignCard({
         )}
       </div>
 
-      {/* 콘텐츠 */}
-      <div className="p-4 space-y-3">
+      {/* 콘텐츠 - 나머지 30% */}
+      <div className="flex-1 p-4 space-y-3 flex flex-col justify-between">
         {/* 제목 */}
         <h3 className="font-bold text-gray-900 line-clamp-1">
           {campaign.title}

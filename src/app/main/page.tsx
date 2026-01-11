@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, FormEvent } from 'react';
+import { useEffect, useState, useRef, FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { TopNav } from '@/components/shared';
@@ -122,17 +122,117 @@ function CategoryFilter() {
 }
 
 // ============================================
-// Campaign Grid Section (4열 그리드로 변경)
+// Campaign Grid Section (무한 스크롤)
 // ============================================
 
 function CampaignGridSection() {
-  const { getOpenCampaigns, isLoading, fetchCampaigns } = useCampaigns();
-  const campaigns = getOpenCampaigns();
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const observerTarget = useRef<HTMLDivElement>(null);
 
+  // 초기 데이터 로드
   useEffect(() => {
-    fetchCampaigns();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // fetchCampaigns는 useCallback으로 안정적이므로 빈 배열 사용
+    loadCampaigns(true);
+  }, []);
+
+  // 무한 스크롤 감지
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore && !isLoading) {
+          loadCampaigns(false);
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, isLoadingMore, isLoading]);
+
+  const loadCampaigns = async (isInitial: boolean) => {
+    if (isInitial) {
+      setIsLoading(true);
+      setCampaigns([]);
+      setCursor(null);
+    } else {
+      setIsLoadingMore(true);
+    }
+
+    try {
+      // 초기 로드는 더 많이, 추가 로드는 12개씩
+      const limit = isInitial ? 20 : 12;
+      const url = cursor
+        ? `/api/campaigns/latest?limit=${limit}&cursor=${cursor}`
+        : `/api/campaigns/latest?limit=${limit}`;
+
+      const response = await fetch(url);
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        const newCampaigns = result.data.campaigns || [];
+        
+        // CampaignListItem 형식으로 변환
+        const currentCampaignsCount = isInitial ? 0 : campaigns.length;
+        const transformedCampaigns = newCampaigns.map((campaign: any, index: number) => {
+          const deadlineDate = new Date(campaign.deadline || new Date().toISOString());
+          const now = new Date();
+          const daysUntilDeadline = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          const isHot = daysUntilDeadline <= 7 && daysUntilDeadline >= 0;
+
+          // 모든 카드에 무작위 이미지 할당
+          const imageUrls = ['/images/cta.jpg', '/images/platform.jpg', '/images/hero.jpg'];
+          // 캠페인 ID를 기반으로 일관된 무작위 선택 (같은 캠페인은 항상 같은 이미지)
+          const imageIndex = campaign.id.charCodeAt(0) % imageUrls.length;
+          const imageUrl = imageUrls[imageIndex];
+
+          return {
+            id: campaign.id,
+            advertiserId: '',
+            advertiserName: '광고주',
+            title: campaign.title || '제목 없음',
+            description: '',
+            objective: campaign.objective || '인지도',
+            channel: campaign.channel || 'Instagram',
+            budgetRange: campaign.budgetRange || '10-30만',
+            category: '기타',
+            status: 'OPEN',
+            deadline: campaign.deadline || new Date().toISOString().split('T')[0],
+            createdAt: new Date().toISOString().split('T')[0],
+            applicationsCount: 0,
+            isHot: campaign.isHot ?? isHot,
+            imageUrl: imageUrl,
+          };
+        });
+
+        if (isInitial) {
+          setCampaigns(transformedCampaigns);
+        } else {
+          setCampaigns((prev) => [...prev, ...transformedCampaigns]);
+        }
+
+        setCursor(result.data.nextCursor);
+        setHasMore(!!result.data.nextCursor);
+      }
+    } catch (error) {
+      console.error('Failed to load campaigns:', error);
+      setHasMore(false);
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -158,118 +258,38 @@ function CampaignGridSection() {
               {campaigns.length}개의 캠페인이 인플루언서를 찾고 있어요
             </p>
           </div>
-          <Link
-            href="/campaigns"
-            className="text-purple-600 hover:text-purple-700 font-medium text-sm flex items-center gap-1"
-          >
-            전체보기 <span>→</span>
-          </Link>
         </div>
 
         {/* 4열 그리드 */}
-        <CampaignList
-          campaigns={campaigns}
-          variant="grid"
-          columns={4}
-          showStatus={true}
-          emptyMessage="현재 모집 중인 캠페인이 없습니다"
-        />
-      </div>
-    </section>
-  );
-}
-
-// ============================================
-// Features Section (이모지 대신 도형 아이콘)
-// ============================================
-
-function FeaturesSection() {
-  const features = [
-    {
-      title: '숏폼 광고 활성화',
-      description: '광고 트렌드에 맞는 영상 제작 지원',
-      iconBg: 'bg-purple-500',
-    },
-    {
-      title: '인플루언서와의 매칭',
-      description: '인플루언서와의 협업을 위한 통합 툴 제공',
-      iconBg: 'bg-violet-500',
-    },
-    {
-      title: '업장 이벤트 생성 AI 도입',
-      description: '간단한 게임을 활용한 이벤트 생성으로 참여와 유입 유도',
-      iconBg: 'bg-indigo-500',
-    },
-  ];
-
-  return (
-    <section className="py-20 px-4 bg-gradient-to-b from-gray-900 to-gray-800">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            <span className="bg-gradient-to-r from-purple-400 to-violet-300 bg-clip-text text-transparent">
-              왜 I:EUM인가요?
-            </span>
-          </h2>
-          <p className="text-gray-400 text-lg">
-            브랜드와 고객을 잇는 새로운 방법
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="
-                bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8
-                border border-gray-700
-                hover:border-purple-500/50 hover:bg-gray-800/80
-                transition-all duration-300
-                group
-              "
-            >
-              {/* 이모지 대신 도형 아이콘 */}
-              <div className={`w-14 h-14 ${feature.iconBg} rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                <div className="w-6 h-6 bg-white/30 rounded-lg" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
-              <p className="text-gray-400 leading-relaxed">{feature.description}</p>
+        {campaigns.length > 0 ? (
+          <>
+            <CampaignList
+              campaigns={campaigns}
+              variant="grid"
+              columns={4}
+              showStatus={true}
+              showAdvertiser={true}
+              emptyMessage="현재 모집 중인 캠페인이 없습니다"
+            />
+            
+            {/* 무한 스크롤 트리거 */}
+            <div ref={observerTarget} className="h-20 flex items-center justify-center">
+              {isLoadingMore && (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+                  <span>더 많은 캠페인을 불러오는 중...</span>
+                </div>
+              )}
+              {!hasMore && campaigns.length > 0 && (
+                <p className="text-gray-400 text-sm">모든 캠페인을 불러왔습니다</p>
+              )}
             </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ============================================
-// CTA Section
-// ============================================
-
-function CTASection() {
-  return (
-    <section className="py-20 px-4 bg-gradient-to-r from-purple-600 via-violet-600 to-purple-700">
-      <div className="max-w-4xl mx-auto text-center">
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-          지금 바로 시작하세요
-        </h2>
-        <p className="text-purple-100 text-lg mb-8">
-          광고주든 인플루언서든, 새로운 기회가 기다리고 있습니다
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <a
-            href="/auth/signup"
-            className="px-8 py-4 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 transition-colors shadow-lg"
-          >
-            무료로 시작하기
-          </a>
-          <a
-            href="/campaigns"
-            className="px-8 py-4 bg-purple-500/30 text-white font-bold rounded-xl hover:bg-purple-500/50 transition-colors border border-purple-400/50"
-          >
-            캠페인 둘러보기
-          </a>
-        </div>
+          </>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-500">현재 모집 중인 캠페인이 없습니다</p>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -296,8 +316,6 @@ export default function MainPage() {
         <SearchBar />
         <CategoryFilter />
         <CampaignGridSection />
-        <FeaturesSection />
-        <CTASection />
 
         <footer className="py-8 px-4 bg-gray-900 border-t border-gray-800">
           <div className="max-w-6xl mx-auto text-center text-sm text-gray-500">
