@@ -287,106 +287,10 @@ function CampaignSlider({ title, campaigns, emptyMessage }: CampaignSliderProps)
 }
 
 // ============================================
-// Tab Navigation
-// ============================================
-
-type TabType = 'campaigns' | 'saved';
-
-function TabNav({ activeTab, onTabChange }: { activeTab: TabType; onTabChange: (tab: TabType) => void }) {
-  return (
-    <div className="border-b border-purple-100 bg-white sticky top-16 z-30">
-      <div className="max-w-4xl mx-auto flex">
-        <button
-          onClick={() => onTabChange('campaigns')}
-          className={`
-            flex-1 py-4 text-sm font-semibold text-center border-b-2 transition-colors
-            ${activeTab === 'campaigns'
-              ? 'border-purple-600 text-purple-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-            }
-          `}
-        >
-          <div className="flex items-center justify-center gap-2">
-            <div className={`w-5 h-5 rounded ${activeTab === 'campaigns' ? 'bg-purple-200' : 'bg-gray-200'}`}>
-              <div className="w-full h-full flex items-center justify-center">
-                <div className={`w-2.5 h-2.5 rounded-sm ${activeTab === 'campaigns' ? 'bg-purple-600' : 'bg-gray-400'}`} />
-              </div>
-            </div>
-            캠페인
-          </div>
-        </button>
-        <button
-          onClick={() => onTabChange('saved')}
-          className={`
-            flex-1 py-4 text-sm font-semibold text-center border-b-2 transition-colors
-            ${activeTab === 'saved'
-              ? 'border-purple-600 text-purple-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-            }
-          `}
-        >
-          <div className="flex items-center justify-center gap-2">
-            <div className={`w-5 h-5 rounded ${activeTab === 'saved' ? 'bg-purple-200' : 'bg-gray-200'}`}>
-              <div className="w-full h-full flex items-center justify-center">
-                <div className={`w-2.5 h-2.5 rounded-sm ${activeTab === 'saved' ? 'bg-purple-600' : 'bg-gray-400'}`} />
-              </div>
-            </div>
-            저장됨
-          </div>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ============================================
 // Campaign Grid
 // ============================================
 
-function CampaignGrid({ campaigns }: { campaigns: Campaign[] }) {
-  if (campaigns.length === 0) {
-    return (
-      <div className="py-16 text-center">
-        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-purple-100 flex items-center justify-center">
-          <div className="w-8 h-8 rounded bg-purple-300" />
-        </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          아직 등록한 캠페인이 없어요
-        </h3>
-        <p className="text-gray-500 mb-6">
-          첫 번째 캠페인을 만들어 인플루언서를 모집해보세요!
-        </p>
-        <Link
-          href="/advertiser/campaigns/new"
-          className="
-            inline-flex items-center gap-2
-            px-6 py-3 rounded-xl
-            bg-purple-600 text-white font-medium
-            hover:bg-purple-700
-            transition-colors
-          "
-        >
-          <span className="text-lg">+</span>
-          첫 캠페인 만들기
-        </Link>
-      </div>
-    );
-  }
 
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-      {campaigns.map((campaign) => (
-        <CampaignCard
-          key={campaign.id}
-          campaign={campaign}
-          variant="default"
-          showStatus={true}
-          showAdvertiser={false}
-        />
-      ))}
-    </div>
-  );
-}
 
 // ============================================
 // Floating Action Button
@@ -424,7 +328,6 @@ export default function AdvertiserDashboardPage() {
   const { campaigns, fetchMyCampaigns, isLoading } = useCampaigns();
   const { user: authUser, isLoading: authLoading, isLoggedIn } = useAuth();
   const [isFollowing, setIsFollowing] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>('campaigns');
 
   // 인증 및 권한 확인
   useEffect(() => {
@@ -509,27 +412,6 @@ export default function AdvertiserDashboardPage() {
         />
       </div>
 
-      {/* 탭 네비게이션 */}
-      <TabNav activeTab={activeTab} onTabChange={setActiveTab} />
-
-      {/* 탭 콘텐츠 */}
-      <div className="max-w-4xl mx-auto pb-24">
-        {isLoading ? (
-          <div className="py-16 text-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-gray-500">캠페인을 불러오는 중...</p>
-          </div>
-        ) : activeTab === 'campaigns' ? (
-          <CampaignGrid campaigns={myCampaigns} />
-        ) : (
-          <div className="py-16 text-center">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-              <div className="w-8 h-8 rounded bg-gray-300" />
-            </div>
-            <p className="text-gray-500">저장된 항목이 없습니다</p>
-          </div>
-        )}
-      </div>
 
       {/* 플로팅 액션 버튼 */}
       <FloatingActionButton />

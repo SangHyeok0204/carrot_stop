@@ -1,30 +1,29 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { getFirebaseAuth } from '@/lib/firebase/auth';
-import { onAuthStateChanged } from 'firebase/auth';
+import {
+  CampaignCategoryId,
+  BudgetRangeDisplay,
+  ChannelType,
+  ObjectiveType,
+} from '@/lib/utils/constants';
 
 // ============================================
-// Types
+// Types (constants.ts에서 가져온 타입 re-export)
 // ============================================
 
-export type CampaignStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-export type Objective = '인지도' | '방문유도' | '구매전환' | '팔로우·구독';
-export type Channel = 'Instagram' | 'YouTube' | 'TikTok';
-export type BudgetRange = '10만 미만' | '10-30만' | '30-50만' | '50-100만' | '100만+';
-export type CampaignCategory =
-  | '카페'
-  | '음식점'
-  | '바/주점'
-  | '뷰티/미용'
-  | '패션/의류'
-  | '스포츠/피트니스'
-  | '페스티벌/행사'
-  | '서포터즈'
-  | '리뷰/체험단'
-  | '기타';
+// UI용 캠페인 상태 (OPEN, IN_PROGRESS 등은 UI에서 사용하는 간소화된 상태)
+export type CampaignListStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
-export interface Campaign {
+// constants.ts 타입들을 re-export
+export type Objective = ObjectiveType;
+export type Channel = ChannelType;
+export type BudgetRange = BudgetRangeDisplay;
+export type CampaignCategory = CampaignCategoryId;
+
+// UI 목록용 Campaign 인터페이스 (types/campaign.ts의 Campaign과 구분)
+export interface CampaignListItem {
   id: string;
   advertiserId: string;
   advertiserName: string;
@@ -34,13 +33,16 @@ export interface Campaign {
   channel: Channel;
   budgetRange: BudgetRange;
   category: CampaignCategory;
-  status: CampaignStatus;
+  status: CampaignListStatus;
   deadline: string;
   createdAt: string;
   applicationsCount: number;
   isHot?: boolean;
-  imageUrl?: string; // 캠페인 대표 이미지 URL
+  imageUrl?: string;
 }
+
+// 하위 호환성을 위해 Campaign도 export (CampaignListItem의 별칭)
+export type Campaign = CampaignListItem;
 
 export interface CreateCampaignInput {
   title: string;

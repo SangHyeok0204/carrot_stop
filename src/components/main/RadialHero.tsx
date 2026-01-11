@@ -1,9 +1,15 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { MainCampaign, CampaignStats } from '@/types/mainCampaign';
+import { Campaign } from '@/contexts';
 import { CampaignCard } from './CampaignCard';
 import { FloatingCharacters } from './FloatingCharacters';
+
+// Stats 타입 정의
+interface CampaignStats {
+  totalRecruiting: number;
+  deadlineThisWeek: number;
+}
 
 export function RadialHero() {
   const [rotation, setRotation] = useState(0);
@@ -12,7 +18,7 @@ export function RadialHero() {
   const heroRef = useRef<HTMLDivElement>(null);
 
   // Firestore에서 가져온 캠페인 데이터
-  const [campaigns, setCampaigns] = useState<MainCampaign[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [stats, setStats] = useState<CampaignStats>({ totalRecruiting: 0, deadlineThisWeek: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
