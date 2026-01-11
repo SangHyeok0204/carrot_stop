@@ -44,7 +44,11 @@ export default function AdminDashboardPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setStats(data.data || stats);
+        if (data.success && data.data) {
+          setStats(data.data);
+        }
+      } else {
+        console.error('Failed to fetch stats:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Failed to fetch stats:', error);

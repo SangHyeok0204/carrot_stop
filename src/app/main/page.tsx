@@ -46,6 +46,8 @@ function SearchBar() {
         <form onSubmit={handleSubmit} className="relative">
           <input
             type="text"
+            name="search"
+            id="main-search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="어떤 광고를 찾고 계시나요?"
@@ -129,7 +131,8 @@ function CampaignGridSection() {
 
   useEffect(() => {
     fetchCampaigns();
-  }, [fetchCampaigns]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // fetchCampaigns는 useCallback으로 안정적이므로 빈 배열 사용
 
   if (isLoading) {
     return (
@@ -169,7 +172,6 @@ function CampaignGridSection() {
           variant="grid"
           columns={4}
           showStatus={true}
-          showAdvertiser={true}
           emptyMessage="현재 모집 중인 캠페인이 없습니다"
         />
       </div>

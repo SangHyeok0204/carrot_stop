@@ -180,6 +180,34 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     };
   };
 
+  // Transform MainCampaign (from /api/campaigns/latest) to Campaign type
+  const transformMainCampaign = (mainCampaign: any): Campaign => {
+    // MainCampaign 타입은 간단한 메인페이지용 캠페인 정보
+    // CampaignListItem 타입으로 변환 (기본값 사용)
+    const deadlineDate = new Date(mainCampaign.deadline || new Date().toISOString());
+    const now = new Date();
+    const daysUntilDeadline = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const isHot = daysUntilDeadline <= 7 && daysUntilDeadline >= 0;
+
+    return {
+      id: mainCampaign.id,
+      advertiserId: '', // MainCampaign에는 없음
+      advertiserName: '광고주', // MainCampaign에는 없음
+      title: mainCampaign.title || '제목 없음',
+      description: '', // MainCampaign에는 없음
+      objective: mainCampaign.objective || '인지도',
+      channel: mainCampaign.channel || 'Instagram',
+      budgetRange: mainCampaign.budgetRange || '10-30만',
+      category: '기타', // MainCampaign에는 없음
+      status: 'OPEN', // MainCampaign은 항상 OPEN
+      deadline: mainCampaign.deadline || new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString().split('T')[0], // MainCampaign에는 없음
+      applicationsCount: 0, // MainCampaign에는 없음
+      isHot: mainCampaign.isHot ?? isHot,
+      imageUrl: undefined,
+    };
+  };
+
   // Fetch all campaigns (for main page)
   const fetchCampaigns = useCallback(async () => {
     setIsLoading(true);
@@ -189,7 +217,8 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
 
       if (data.success && data.data?.campaigns) {
-        const transformed = data.data.campaigns.map(transformCampaign);
+        // /api/campaigns/latest는 MainCampaign[] 타입 반환
+        const transformed = data.data.campaigns.map(transformMainCampaign);
         setCampaigns(transformed);
       }
     } catch (err: any) {
@@ -215,7 +244,8 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
 
       if (data.success && data.data?.campaigns) {
-        const transformed = data.data.campaigns.map(transformCampaign);
+        // /api/campaigns/latest는 MainCampaign[] 타입 반환
+        const transformed = data.data.campaigns.map(transformMainCampaign);
         setCampaigns(transformed);
       }
     } catch (err: any) {

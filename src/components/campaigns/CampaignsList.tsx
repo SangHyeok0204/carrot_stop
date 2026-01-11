@@ -113,6 +113,8 @@ export default function CampaignsList() {
           <div className="mb-6">
             <input
               type="text"
+              name="campaign-search"
+              id="campaign-search"
               placeholder="캠페인 검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

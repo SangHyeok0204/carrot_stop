@@ -174,7 +174,6 @@ function SearchContent() {
               variant="grid"
               columns={3}
               showStatus={true}
-              showAdvertiser={true}
               emptyMessage={`"${query}"에 대한 검색 결과가 없습니다`}
               emptyIcon="🔍"
             />
