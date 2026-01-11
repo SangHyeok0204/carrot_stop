@@ -116,7 +116,7 @@ export default function HomePage() {
             지금 바로 시작하세요
           </h2>
           <p className="text-sky-100 text-lg mb-8">
-            광고주든 인플루언서든, 새로운 기회가 기다리고 있습니다
+            새로운 기회가 기다리고 있습니다
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="text-lg px-8 py-6 bg-white text-sky-600 hover:bg-sky-50 shadow-lg">
