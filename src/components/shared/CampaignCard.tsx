@@ -115,11 +115,12 @@ export function CampaignCard({
         hover:shadow-xl hover:border-purple-200 hover:-translate-y-1
         transition-all duration-300
         group
+        flex flex-col
         ${className}
       `}
     >
-      {/* 상단 이미지/그라데이션 영역 */}
-      <div className="h-36 relative overflow-hidden">
+      {/* 상단 이미지/그라데이션 영역 - 전체의 70% */}
+      <div className="flex-[0_0_70%] min-h-[200px] relative overflow-hidden">
         {campaign.imageUrl ? (
           // 실제 이미지가 있는 경우
           <>
@@ -155,8 +156,8 @@ export function CampaignCard({
         </span>
       </div>
 
-      {/* 콘텐츠 */}
-      <div className="p-4 space-y-3">
+      {/* 콘텐츠 - 나머지 30% */}
+      <div className="flex-1 p-4 space-y-3 flex flex-col justify-between">
         {/* 제목 */}
         <h3 className="font-bold text-gray-900 line-clamp-2 group-hover:text-purple-600 transition-colors min-h-[2.5rem]">
           {campaign.title}

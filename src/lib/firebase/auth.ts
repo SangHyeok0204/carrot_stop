@@ -1,5 +1,5 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
+import { getAuth, Auth, setPersistence, inMemoryPersistence } from 'firebase/auth';
 
 /**
  * 환경별 Firebase 설정 (개발/스테이징/프로덕션)
@@ -56,6 +56,12 @@ export function getFirebaseAuth(): Auth {
     return auth;
   }
   auth = getAuth(getFirebaseApp());
+  
+  // 메모리 기반 persistence 설정 (페이지 새로고침 시 자동 로그아웃)
+  setPersistence(auth, inMemoryPersistence).catch((error) => {
+    console.error('Failed to set auth persistence:', error);
+  });
+  
   return auth;
 }
 
