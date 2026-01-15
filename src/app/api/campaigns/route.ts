@@ -29,24 +29,30 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') as CampaignStatus | null;
     const limit = parseInt(searchParams.get('limit') || '20');
     const cursor = searchParams.get('cursor');
+    const advertiserIdParam = searchParams.get('advertiserId');
 
     const db = getAdminFirestore();
     let query: any = db.collection('campaigns');
 
-    // 역할별 필터링
-    if (user.role === 'advertiser') {
-      // advertiser: advertiserId로 필터링 (복합 인덱스 없이 동작하도록 orderBy 제거)
-      query = query.where('advertiserId', '==', user.uid);
-      // 복합 인덱스가 필요하므로 orderBy 제거하고 메모리에서 정렬
-    } else if (user.role === 'influencer') {
-      // influencer: 항상 OPEN 상태만 조회
-      query = query.where('status', '==', 'OPEN');
-      // status + orderBy 조합은 인덱스 필요 (openedAt 사용 또는 메모리 정렬)
+    // advertiserId 쿼리 파라미터가 있으면 해당 광고주의 캠페인만 조회
+    if (advertiserIdParam) {
+      query = query.where('advertiserId', '==', advertiserIdParam);
+    } else {
+      // 역할별 필터링
+      if (user.role === 'advertiser') {
+        // advertiser: advertiserId로 필터링 (복합 인덱스 없이 동작하도록 orderBy 제거)
+        query = query.where('advertiserId', '==', user.uid);
+        // 복합 인덱스가 필요하므로 orderBy 제거하고 메모리에서 정렬
+      } else if (user.role === 'influencer') {
+        // influencer: 항상 OPEN 상태만 조회
+        query = query.where('status', '==', 'OPEN');
+        // status + orderBy 조합은 인덱스 필요 (openedAt 사용 또는 메모리 정렬)
+      }
+      // admin: 필터 없이 모든 캠페인 조회
     }
-    // admin: 필터 없이 모든 캠페인 조회
 
-    // 복합 인덱스 문제를 피하기 위해 advertiser는 메모리에서 정렬
-    if (user.role === 'advertiser') {
+    // 복합 인덱스 문제를 피하기 위해 advertiserId 필터가 있거나 advertiser 역할인 경우 메모리에서 정렬
+    if (advertiserIdParam || user.role === 'advertiser') {
       // orderBy 제거 (복합 인덱스 문제 회피)
       // 모든 데이터를 가져온 후 메모리에서 정렬
       // limit은 메모리 정렬 후 적용
@@ -55,7 +61,7 @@ export async function GET(request: NextRequest) {
       query = query.orderBy('createdAt', 'desc').limit(limit);
     }
 
-    if (cursor && user.role !== 'advertiser') {
+    if (cursor && !advertiserIdParam && user.role !== 'advertiser') {
       const cursorDoc = await db.collection('campaigns').doc(cursor).get();
       if (cursorDoc.exists) {
         query = query.startAfter(cursorDoc);
@@ -101,12 +107,12 @@ export async function GET(request: NextRequest) {
         openedAt: convertTimestamp(data.openedAt),
         completedAt: convertTimestamp(data.completedAt),
         deadlineDate: convertTimestamp(data.deadlineDate),
-        _sortTime: createdAtTime, // 정렬용 임시 필드
+        _sortTime: createdAtTime, // 정렬용 임시 필드 (TODO: Firestore 인덱스 생성 후 제거)
       };
     });
 
-    // advertiser의 경우 메모리에서 정렬 (복합 인덱스 문제 회피)
-    if (user.role === 'advertiser') {
+    // advertiserIdParam이 있거나 advertiser 역할인 경우 메모리에서 정렬 (복합 인덱스 문제 회피)
+    if (advertiserIdParam || user.role === 'advertiser') {
       campaigns = campaigns.sort((a: any, b: any) => (b._sortTime || 0) - (a._sortTime || 0));
     }
 
@@ -129,40 +135,8 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('Get campaigns error:', error);
-    console.error('Error stack:', error.stack);
-    console.error('Error details:', {
-      code: error.code,
-      message: error.message,
-      statusCode: error.statusCode,
-    });
-    
-    // Firestore 인덱스 에러인 경우 더 명확한 메시지
-    if (error.code === 9 || error.message?.includes('index')) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: { 
-            code: 'INDEX_REQUIRED', 
-            message: 'Firestore 인덱스가 필요합니다. Firebase Console에서 인덱스를 생성해주세요.',
-            details: error.message 
-          } 
-        },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: { 
-          code: 'INTERNAL_ERROR', 
-          message: error.message || '알 수 없는 오류가 발생했습니다.',
-          details: error.code || error.statusCode 
-        } 
-      },
-      { status: 500 }
-    );
+    const { handleApiError } = await import('@/lib/utils/errorHandler');
+    return handleApiError(error);
   }
 }
 
@@ -180,7 +154,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { naturalLanguageInput, proposal, budget, duration, channel } = body;
+    const { naturalLanguageInput, proposal, budget, duration, channel, imageUrl, category } = body;
 
     if (!naturalLanguageInput || !proposal) {
       return NextResponse.json(
@@ -211,6 +185,22 @@ export async function POST(request: NextRequest) {
       deadlineDate: Timestamp.fromDate(deadlineDate),
       estimatedDuration: days,
     });
+
+    // 이미지 URL이 있으면 캠페인 문서에 저장
+    if (imageUrl) {
+      await updateCampaign(campaignId, {
+        imageUrl: imageUrl,
+      } as any);
+    }
+
+    // 카테고리가 있으면 정규화하여 캠페인 문서에 저장
+    if (category) {
+      const { normalizeCategory } = await import('@/lib/utils/category');
+      const normalizedCategory = normalizeCategory(category);
+      await updateCampaign(campaignId, {
+        category: normalizedCategory,
+      } as any);
+    }
 
     // Spec 버전 생성 (Mock 기획서 기반)
     const specJson = {
@@ -260,11 +250,8 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('Create campaign error:', error);
-    return NextResponse.json(
-      { success: false, error: { code: 'INTERNAL_ERROR', message: error.message } },
-      { status: 500 }
-    );
+    const { handleApiError } = await import('@/lib/utils/errorHandler');
+    return handleApiError(error);
   }
 }
 

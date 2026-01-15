@@ -30,6 +30,7 @@ export function getUserPrompt(naturalLanguageInput: string): string {
 2. **실행 스펙 (specJson)**: 
    - 아래 JSON Schema에 정확히 맞는 형식
    - 모든 필수 필드 포함
+   - **title 필드 필수**: 캠페인 제목을 명확하고 간결하게 생성 (10-50자)
    - clarification_questions는 최대 3개, 선택지는 각 2-4개
    - 한국어로 작성하되, JSON 구조는 정확히 유지
 
@@ -42,6 +43,7 @@ export function getUserPrompt(naturalLanguageInput: string): string {
 {
   "proposalMarkdown": "# 캠페인 제안서\n\n## 목표\n...(최소 500자 이상의 상세한 마크다운 제안서)...",
   "specJson": {
+    "title": "캠페인 제목 (10-50자, 명확하고 간결하게)",
     "objective": "캠페인의 명확한 목표 (20-500자)",
     "target_audience": {
       "demographics": "20-30대 여성, 직장인",

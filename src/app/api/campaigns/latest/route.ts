@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/admin';
+import { cache } from '@/lib/utils/cache';
 import { MainCampaign, Objective, BudgetRange, Channel } from '@/types/mainCampaign';
 
 /**
@@ -14,6 +15,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 50);
     const cursor = searchParams.get('cursor');
+
+    // 캐시 키 생성
+    const cacheKey = `campaigns:latest:${limit}:${cursor || 'none'}`;
+
+    // 캐시에서 먼저 확인
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached);
+    }
 
     const db = getAdminFirestore();
 
@@ -43,6 +53,32 @@ export async function GET(request: NextRequest) {
           }
         }
 
+        // 광고주 정보 가져오기
+        let advertiserName: string | undefined;
+        if (data.advertiserId) {
+          try {
+            const advertiserDoc = await db.collection('users').doc(data.advertiserId).get();
+            if (advertiserDoc.exists) {
+              const advertiserData = advertiserDoc.data();
+              advertiserName = advertiserData?.companyName || advertiserData?.displayName;
+            }
+          } catch (error) {
+            console.error('Failed to fetch advertiser:', error);
+          }
+        }
+
+        // 지원자 수 계산
+        let applicationsCount = 0;
+        try {
+          const applicationsSnapshot = await db.collection('campaigns')
+            .doc(doc.id)
+            .collection('applications')
+            .get();
+          applicationsCount = applicationsSnapshot.size;
+        } catch (error) {
+          console.error('Failed to fetch applications count:', error);
+        }
+
         // deadline 계산
         const deadlineDate = data.deadlineDate?.toDate();
         const deadline = deadlineDate
@@ -63,18 +99,31 @@ export async function GET(request: NextRequest) {
         // channel 매핑 (specJson.recommended_content_types[0].platform)
         const channel = mapChannel(specJson?.recommended_content_types);
 
+        // 카테고리 추출 및 정규화
+        const { normalizeCategory } = await import('@/lib/utils/category');
+        const rawCategory = specJson?.target_audience?.interests?.[0] || data.category;
+        const category = normalizeCategory(rawCategory);
+
+        // 설명 추출 (naturalLanguageInput 또는 specJson에서)
+        const description = data.naturalLanguageInput || specJson?.description || '';
+
         // 정렬용 타임스탬프 (openedAt 우선, 없으면 createdAt)
         const sortTime = data.openedAt?.toDate()?.getTime() || data.createdAt?.toDate()?.getTime() || 0;
 
         return {
           id: doc.id,
-          title: data.title || '캠페인',
+          title: data.title || '',
           objective,
           budgetRange,
           channel,
           deadline,
           isHot,
-          _sortTime: sortTime, // 정렬용 임시 필드
+          advertiserName,
+          description,
+          category,
+          imageUrl: data.imageUrl,
+          applicationsCount,
+          _sortTime: sortTime, // 정렬용 임시 필드 (TODO: Firestore 인덱스 생성 후 제거)
         };
       })
     );
@@ -107,14 +156,19 @@ export async function GET(request: NextRequest) {
       deadlineThisWeek: allCampaigns.filter(c => c.isHot).length,
     };
 
-    return NextResponse.json({
+    const response = {
       success: true,
       data: {
         campaigns,
         stats,
         nextCursor,
       },
-    });
+    };
+
+    // 캐시에 저장 (5분 TTL)
+    cache.set(cacheKey, response, 5 * 60 * 1000);
+
+    return NextResponse.json(response);
   } catch (error: any) {
     console.error('Get latest campaigns error:', error);
     return NextResponse.json(
@@ -159,11 +213,20 @@ function mapBudgetRange(budgetRange?: { min?: number; max?: number }): BudgetRan
  * LLM이 생성한 recommended_content_types를 MainCampaign.Channel로 매핑
  */
 function mapChannel(contentTypes?: Array<{ platform?: string }>): Channel {
-  if (!contentTypes || contentTypes.length === 0) return 'Instagram';
+  if (!contentTypes || contentTypes.length === 0) {
+    // 기본값 대신 첫 번째 플랫폼이 없으면 첫 번째 콘텐츠 타입의 플랫폼 사용
+    // 없으면 'Instagram' 반환 (하지만 실제로는 데이터가 있어야 함)
+    console.warn('No content types found, defaulting to Instagram');
+    return 'Instagram';
+  }
 
   const platform = contentTypes[0]?.platform?.toLowerCase() || '';
 
   if (platform.includes('youtube')) return 'YouTube';
   if (platform.includes('tiktok')) return 'TikTok';
-  return 'Instagram'; // 기본값
+  if (platform.includes('instagram')) return 'Instagram';
+  
+  // 알 수 없는 플랫폼이면 기본값 반환
+  console.warn(`Unknown platform: ${platform}, defaulting to Instagram`);
+  return 'Instagram';
 }

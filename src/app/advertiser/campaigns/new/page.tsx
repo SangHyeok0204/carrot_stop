@@ -109,6 +109,8 @@ export default function NewCampaignPage() {
   const [channel, setChannel] = useState<Channel | ''>('');
   const [budgetRange, setBudgetRange] = useState<BudgetRange | ''>('');
   const [deadline, setDeadline] = useState('');
+  const [imageUrl, setImageUrl] = useState<string>('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Firebase Auth 상태 확인
   useEffect(() => {
@@ -206,6 +208,7 @@ export default function NewCampaignPage() {
         budgetRange: budgetRange as BudgetRange,
         category: category as CampaignCategory,
         deadline,
+        imageUrl: imageUrl || undefined,
       };
 
       const newCampaign = await addCampaign(input);
@@ -398,6 +401,117 @@ export default function NewCampaignPage() {
                       outline-none transition-all
                     "
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    캠페인 대표 이미지 (선택)
+                  </label>
+                  <div className="space-y-3">
+                    {imageUrl ? (
+                      <div className="relative">
+                        <img
+                          src={imageUrl}
+                          alt="캠페인 이미지"
+                          className="w-full h-48 object-cover rounded-xl border border-purple-100"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setImageUrl('')}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="
+                        flex flex-col items-center justify-center
+                        w-full h-48 border-2 border-dashed border-purple-200
+                        rounded-xl cursor-pointer
+                        hover:border-purple-400 hover:bg-purple-50
+                        transition-colors
+                      ">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file || !user) return;
+
+                            setIsUploadingImage(true);
+                            try {
+                              const auth = getFirebaseAuth();
+                              const firebaseUser = auth.currentUser;
+                              if (!firebaseUser) return;
+
+                              const token = await firebaseUser.getIdToken();
+                              
+                              // 임시 캠페인 ID 생성 (실제 캠페인 생성 전)
+                              const tempCampaignId = `temp-${Date.now()}`;
+                              
+                              // 업로드 URL 요청
+                              const uploadResponse = await fetch('/api/storage/upload', {
+                                method: 'POST',
+                                headers: {
+                                  'Authorization': `Bearer ${token}`,
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                  fileName: file.name,
+                                  contentType: file.type,
+                                  campaignId: tempCampaignId,
+                                  type: 'images',
+                                }),
+                              });
+
+                              const uploadData = await uploadResponse.json();
+                              if (!uploadData.success) {
+                                throw new Error('Failed to get upload URL');
+                              }
+
+                              // 파일 업로드
+                              const uploadResult = await fetch(uploadData.data.uploadUrl, {
+                                method: 'PUT',
+                                headers: {
+                                  'Content-Type': file.type,
+                                },
+                                body: file,
+                              });
+
+                              if (!uploadResult.ok) {
+                                throw new Error('Failed to upload file');
+                              }
+
+                              setImageUrl(uploadData.data.publicUrl);
+                            } catch (error) {
+                              console.error('Image upload error:', error);
+                              alert('이미지 업로드에 실패했습니다.');
+                            } finally {
+                              setIsUploadingImage(false);
+                            }
+                          }}
+                          disabled={isUploadingImage}
+                        />
+                        {isUploadingImage ? (
+                          <div className="text-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
+                            <p className="text-sm text-gray-600">업로드 중...</p>
+                          </div>
+                        ) : (
+                          <>
+                            <svg className="w-12 h-12 text-purple-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <p className="text-sm text-gray-600">이미지를 클릭하여 업로드</p>
+                            <p className="text-xs text-gray-400 mt-1">JPG, PNG, GIF (최대 5MB)</p>
+                          </>
+                        )}
+                      </label>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

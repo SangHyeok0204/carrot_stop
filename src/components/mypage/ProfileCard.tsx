@@ -68,13 +68,13 @@ const PlatformIcon = ({ platform }: { platform: string }) => {
 export function ProfileCard({ user, role }: ProfileCardProps) {
   // 인플루언서의 경우 활동명 결정
   const displayName = role === 'influencer'
-    ? (user.nickname || user.displayName || '인플루언서')
-    : (user.companyName || user.displayName || '광고주');
+    ? (user.nickname || user.displayName || '사용자')
+    : (user.companyName || user.displayName || '회사');
 
   const initial = displayName.charAt(0).toUpperCase();
 
   // 한 줄 정체성 설명 (bio 또는 기본값)
-  const identityDescription = user.bio || '인플루언서';
+  const identityDescription = user.bio || '소개가 없습니다';
 
   return (
     <Card className="p-6 bg-white border-gray-200">

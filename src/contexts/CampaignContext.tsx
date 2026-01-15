@@ -52,6 +52,7 @@ export interface CreateCampaignInput {
   budgetRange: BudgetRange;
   category: CampaignCategory;
   deadline: string;
+  imageUrl?: string;
 }
 
 // ============================================
@@ -164,8 +165,8 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     return {
       id: apiCampaign.id,
       advertiserId: apiCampaign.advertiserId || '',
-      advertiserName: apiCampaign.advertiserName || '광고주',
-      title: apiCampaign.title || '제목 없음',
+      advertiserName: apiCampaign.advertiserName || '',
+      title: apiCampaign.title || '',
       description: apiCampaign.naturalLanguageInput || apiCampaign.description || '',
       objective: apiCampaign.objective || '인지도',
       channel: apiChannelToChannel(apiCampaign.channel),
@@ -192,19 +193,19 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     return {
       id: mainCampaign.id,
       advertiserId: '', // MainCampaign에는 없음
-      advertiserName: '광고주', // MainCampaign에는 없음
-      title: mainCampaign.title || '제목 없음',
-      description: '', // MainCampaign에는 없음
+      advertiserName: mainCampaign.advertiserName || '',
+      title: mainCampaign.title || '',
+      description: mainCampaign.description || '',
       objective: mainCampaign.objective || '인지도',
-      channel: mainCampaign.channel || 'Instagram',
+      channel: mainCampaign.channel || 'Instagram', // 기본값은 있지만 실제로는 데이터가 있어야 함
       budgetRange: mainCampaign.budgetRange || '10-30만',
-      category: '기타', // MainCampaign에는 없음
+      category: mainCampaign.category || '기타',
       status: 'OPEN', // MainCampaign은 항상 OPEN
       deadline: mainCampaign.deadline || new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString().split('T')[0], // MainCampaign에는 없음
-      applicationsCount: 0, // MainCampaign에는 없음
+      applicationsCount: mainCampaign.applicationsCount || 0,
       isHot: mainCampaign.isHot ?? isHot,
-      imageUrl: undefined,
+      imageUrl: mainCampaign.imageUrl || undefined,
     };
   };
 
@@ -319,6 +320,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
         duration: durationDays <= 3 ? '3days' : durationDays <= 7 ? '1week' : durationDays <= 14 ? '2weeks' : '1month',
         channel: channelToApiValue(input.channel),
         category: input.category,
+        imageUrl: input.imageUrl,
       };
 
       const response = await fetch('/api/campaigns', {

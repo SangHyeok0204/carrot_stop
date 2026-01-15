@@ -1,21 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/deadline-reminder",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/cron/overdue-detection",
-      "schedule": "5 9 * * *"
-    },
-    {
-      "path": "/api/cron/generate-reports",
-      "schedule": "0 18 * * *"
-    },
-    {
-      "path": "/api/cron/status-transition",
-      "schedule": "0 * * * *"
+      "path": "/api/cron/daily",
+      "schedule": "0 0 * * *"
     }
   ]
 }
-

@@ -287,9 +287,29 @@ export default function TrialStartPage() {
   };
 
   // 설문 완료
-  const handleComplete = () => {
-    // TODO: 응답 데이터 저장 로직
-    console.log('Survey answers:', answers);
+  const handleComplete = async () => {
+    try {
+      // 응답 데이터 저장
+      const answersArray = Object.entries(answers).map(([questionId, answer]) => ({
+        questionId,
+        answer: Array.isArray(answer) ? answer : [answer].filter(Boolean),
+      }));
+
+      const response = await fetch('/api/trial/survey', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ answers: answersArray }),
+      });
+
+      const data = await response.json();
+      if (!data.success) {
+        console.error('Failed to save survey:', data.error);
+      }
+    } catch (error) {
+      console.error('Error saving survey:', error);
+    }
 
     // 회원가입 페이지로 이동
     router.push('/auth/signup');

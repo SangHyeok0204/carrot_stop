@@ -1,5 +1,7 @@
 'use client';
 
+import { memo } from 'react';
+import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 
 // ============================================
@@ -16,7 +18,7 @@ interface PortfolioBannerProps {
   }>;
 }
 
-export function PortfolioBanner({ portfolioItems = [] }: PortfolioBannerProps) {
+export const PortfolioBanner = memo(function PortfolioBanner({ portfolioItems = [] }: PortfolioBannerProps) {
   // 포트폴리오가 없으면 placeholder
   if (portfolioItems.length === 0) {
     return (
@@ -43,10 +45,12 @@ export function PortfolioBanner({ portfolioItems = [] }: PortfolioBannerProps) {
         {itemsToShow.map((item) => {
           const content = (
             <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group cursor-pointer">
-              <img
+              <Image
                 src={item.imageUrl}
                 alt={item.title || '포트폴리오'}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-200"
+                sizes="(max-width: 768px) 33vw, 20vw"
               />
               {/* 호버 시 링크 아이콘 */}
               {item.contentUrl && (
@@ -78,5 +82,5 @@ export function PortfolioBanner({ portfolioItems = [] }: PortfolioBannerProps) {
       </div>
     </Card>
   );
-}
+});
 

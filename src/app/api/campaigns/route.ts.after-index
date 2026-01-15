@@ -1,0 +1,35 @@
+// Firestore 인덱스 생성 후 적용할 코드
+// 인덱스 생성 후 이 파일의 내용을 route.ts에 적용하세요
+
+// 변경 사항:
+// 1. _sortTime 필드 제거
+// 2. orderBy 직접 사용
+
+// 라인 48-56 부근:
+if (user.role === 'advertiser') {
+  // 복합 인덱스: advertiserId + createdAt (desc)
+  query = query
+    .where('advertiserId', '==', user.uid)
+    .orderBy('createdAt', 'desc')
+    .limit(limit);
+} else if (user.role === 'influencer') {
+  // 복합 인덱스: status + openedAt (desc)
+  query = query
+    .where('status', '==', 'OPEN')
+    .orderBy('openedAt', 'desc')
+    .limit(limit);
+}
+
+// 라인 104 부근: _sortTime 필드 제거
+const campaign = {
+  id: doc.id,
+  ...data,
+  createdAt: convertTimestamp(data.createdAt),
+  updatedAt: convertTimestamp(data.updatedAt),
+  approvedAt: convertTimestamp(data.approvedAt),
+  openedAt: convertTimestamp(data.openedAt),
+  completedAt: convertTimestamp(data.completedAt),
+  deadlineDate: convertTimestamp(data.deadlineDate),
+  // _sortTime 필드 제거
+};
+

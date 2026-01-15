@@ -5,3 +5,4 @@ export { CampaignDescription } from './CampaignDescription';
 export { InfluencerRequirements } from './InfluencerRequirements';
 export { ProcessGuide } from './ProcessGuide';
 export { FixedCTA } from './FixedCTA';
+export { CampaignReviews } from './CampaignReviews';

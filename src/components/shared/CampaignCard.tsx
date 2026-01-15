@@ -1,6 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { memo, useMemo, useCallback } from 'react';
+import Image from 'next/image';
 import { Campaign } from '@/contexts';
 import { Badge } from '@/components/ui/badge';
 
@@ -83,7 +85,7 @@ const ChannelIcon = ({ channel }: { channel: string }) => {
 // CampaignCard Component
 // ============================================
 
-export function CampaignCard({
+export const CampaignCard = memo(function CampaignCard({
   campaign,
   variant = 'default',
   showStatus = true,
@@ -93,19 +95,19 @@ export function CampaignCard({
 }: CampaignCardProps) {
   const router = useRouter();
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     if (onClick) {
       onClick();
     } else {
       router.push(`/campaigns/${campaign.id}`);
     }
-  };
+  }, [onClick, router, campaign.id]);
 
-  const status = statusConfig[campaign.status] || statusConfig['OPEN'];
-  const placeholderColor = categoryPlaceholders[campaign.category] || categoryPlaceholders['기타'];
+  const status = useMemo(() => statusConfig[campaign.status] || statusConfig['OPEN'], [campaign.status]);
+  const placeholderColor = useMemo(() => categoryPlaceholders[campaign.category] || categoryPlaceholders['기타'], [campaign.category]);
 
   // 마감일 포맷팅
-  const formatDeadline = (deadline: string) => {
+  const formatDeadline = useCallback((deadline: string) => {
     const date = new Date(deadline);
     const now = new Date();
     const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
@@ -114,7 +116,7 @@ export function CampaignCard({
     if (diffDays === 0) return '오늘 마감';
     if (diffDays <= 7) return `D-${diffDays}`;
     return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
-  };
+  }, []);
 
   // ============================================
   // Compact Variant (리스트용)
@@ -133,12 +135,14 @@ export function CampaignCard({
         `}
       >
         {/* 썸네일 */}
-        <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+        <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 relative">
           {campaign.imageUrl ? (
-            <img
+            <Image
               src={campaign.imageUrl}
               alt={campaign.title}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              sizes="80px"
             />
           ) : (
             <div className={`w-full h-full ${placeholderColor} flex items-center justify-center`}>
@@ -191,10 +195,13 @@ export function CampaignCard({
       {/* 썸네일 이미지 */}
       <div className="relative w-full h-48 overflow-hidden">
         {campaign.imageUrl ? (
-          <img
+          <Image
             src={campaign.imageUrl}
             alt={campaign.title}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            priority={false}
           />
         ) : (
           <div className={`w-full h-full ${placeholderColor} flex items-center justify-center`}>
@@ -239,7 +246,7 @@ export function CampaignCard({
       </div>
     </div>
   );
-}
+});
 
 // ============================================
 // Status Badge (Standalone)

@@ -13,7 +13,91 @@ import {
   InfluencerRequirements,
   ProcessGuide,
   FixedCTA,
+  CampaignReviews,
 } from '@/components/campaigns';
+
+// ============================================
+// Campaign Delete Button Component
+// ============================================
+
+function CampaignDeleteButton({
+  campaignId,
+  campaignTitle,
+  status,
+  onDelete,
+}: {
+  campaignId: string;
+  campaignTitle: string;
+  status: string;
+  onDelete: () => void;
+}) {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!confirm(`정말 "${campaignTitle}" 캠페인을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없으며, 모든 관련 데이터(지원, 제출물, 리뷰 등)가 영구적으로 삭제됩니다.`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const auth = getFirebaseAuth();
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/campaigns/${campaignId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert('캠페인이 삭제되었습니다.');
+        onDelete();
+      } else {
+        alert(data.error?.message || '캠페인 삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Delete campaign error:', error);
+      alert('캠페인 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleDelete}
+      disabled={isDeleting}
+      className="
+        w-full px-4 py-2
+        bg-red-600 text-white text-sm font-medium rounded-lg
+        hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed
+        transition-colors
+        flex items-center justify-center gap-2
+      "
+    >
+      {isDeleting ? (
+        <>
+          <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          삭제 중...
+        </>
+      ) : (
+        <>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          캠페인 삭제
+        </>
+      )}
+    </button>
+  );
+}
 
 // ============================================
 // Types
@@ -36,6 +120,7 @@ interface CampaignDetail {
   deadline?: string;
   createdAt?: string;
   applicationsCount?: number;
+  selectedInfluencerIds?: string[];
   spec?: {
     objective?: string;
     target_audience?: {
@@ -90,6 +175,7 @@ export default function CampaignDetailPage() {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId]);
 
   const loadData = async () => {
@@ -272,7 +358,7 @@ export default function CampaignDetailPage() {
 
             {/* 회사(광고주) 요약 & 신뢰 요소 */}
             <AdvertiserCard
-              name={campaign.advertiserName || '광고주'}
+              name={campaign.advertiserName || '회사'}
               advertiserId={campaign.advertiserId}
             />
 
@@ -298,8 +384,14 @@ export default function CampaignDetailPage() {
               mustNot={campaign.spec?.constraints?.must_not}
             />
 
-            {/* TODO: 리뷰 / 이전 캠페인 성과 */}
-            {/* <CampaignReviews /> */}
+            {/* 리뷰 섹션 */}
+            <CampaignReviews
+              campaignId={campaign.id}
+              userRole={user?.role}
+              userId={user?.id}
+              advertiserId={campaign.advertiserId}
+              influencerId={campaign.selectedInfluencerIds?.[0]}
+            />
           </div>
 
           {/* 우측: 고정 CTA (데스크탑) */}
@@ -315,6 +407,20 @@ export default function CampaignDetailPage() {
             onApply={handleApply}
             applying={applying}
           />
+
+          {/* 캠페인 삭제 버튼 (광고주만) */}
+          {isOwner && campaign.status !== 'RUNNING' && campaign.status !== 'IN_PROGRESS' && (
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <h3 className="text-sm font-semibold text-red-900 mb-2">위험 구역</h3>
+              <p className="text-xs text-red-700 mb-3">캠페인을 삭제하면 모든 관련 데이터가 영구적으로 삭제됩니다.</p>
+              <CampaignDeleteButton
+                campaignId={campaign.id}
+                campaignTitle={campaign.title}
+                status={campaign.status}
+                onDelete={() => router.push('/advertiser/dashboard')}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

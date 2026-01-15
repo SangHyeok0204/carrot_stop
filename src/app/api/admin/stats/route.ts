@@ -34,12 +34,29 @@ export async function GET(request: NextRequest) {
       .get();
     const delayedContracts = delayedContractsSnapshot.size;
 
+    // 실제 계약 수 계산: SELECTED 상태의 지원(application)을 계약으로 간주
+    let totalContracts = 0;
+    try {
+      const allCampaignsSnapshot = await db.collection('campaigns').get();
+      for (const campaignDoc of allCampaignsSnapshot.docs) {
+        const applicationsSnapshot = await campaignDoc.ref
+          .collection('applications')
+          .where('status', '==', 'SELECTED')
+          .get();
+        totalContracts += applicationsSnapshot.size;
+      }
+    } catch (error) {
+      console.error('Failed to calculate total contracts:', error);
+      // 에러 발생 시 pendingContracts로 fallback
+      totalContracts = pendingContracts;
+    }
+
     return NextResponse.json({
       success: true,
       data: {
         totalCampaigns,
         pendingReview,
-        totalContracts: pendingContracts, // 임시로 pendingContracts와 동일하게 설정
+        totalContracts, // SELECTED 상태의 지원 수
         pendingContracts,
         delayedContracts,
       },

@@ -35,7 +35,7 @@ function SearchBar() {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      router.push(`/campaigns/search?q=${encodeURIComponent(query.trim())}`);
+      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
     }
   };
 
@@ -50,7 +50,7 @@ function SearchBar() {
             id="main-search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="어떤 광고를 찾고 계시나요?"
+            placeholder="캠페인, 광고주, 인플루언서를 검색하세요"
             className="
               w-full px-6 py-5 pr-14
               bg-white/90 backdrop-blur-sm rounded-2xl
@@ -136,6 +136,7 @@ function CampaignGridSection() {
   // 초기 데이터 로드
   useEffect(() => {
     loadCampaigns(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 무한 스크롤 감지
@@ -159,6 +160,7 @@ function CampaignGridSection() {
         observer.unobserve(currentTarget);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasMore, isLoadingMore, isLoading]);
 
   const loadCampaigns = async (isInitial: boolean) => {
@@ -191,26 +193,23 @@ function CampaignGridSection() {
           const daysUntilDeadline = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
           const isHot = daysUntilDeadline <= 7 && daysUntilDeadline >= 0;
 
-          // 모든 카드에 무작위 이미지 할당
-          const imageUrls = ['/images/cta.jpg', '/images/platform.jpg', '/images/hero.jpg'];
-          // 캠페인 ID를 기반으로 일관된 무작위 선택 (같은 캠페인은 항상 같은 이미지)
-          const imageIndex = campaign.id.charCodeAt(0) % imageUrls.length;
-          const imageUrl = imageUrls[imageIndex];
+          // 이미지 URL: API에서 제공되면 사용, 없으면 placeholder
+          const imageUrl = campaign.imageUrl || undefined;
 
           return {
             id: campaign.id,
             advertiserId: '',
-            advertiserName: '광고주',
-            title: campaign.title || '제목 없음',
-            description: '',
+            advertiserName: campaign.advertiserName,
+            title: campaign.title || '',
+            description: campaign.description || '',
             objective: campaign.objective || '인지도',
-            channel: campaign.channel || 'Instagram',
+            channel: campaign.channel || 'Instagram', // 기본값은 있지만 실제로는 데이터가 있어야 함
             budgetRange: campaign.budgetRange || '10-30만',
-            category: '기타',
+            category: campaign.category || '기타',
             status: 'OPEN',
             deadline: campaign.deadline || new Date().toISOString().split('T')[0],
             createdAt: new Date().toISOString().split('T')[0],
-            applicationsCount: 0,
+            applicationsCount: campaign.applicationsCount || 0,
             isHot: campaign.isHot ?? isHot,
             imageUrl: imageUrl,
           };
@@ -318,8 +317,26 @@ export default function MainPage() {
         <CampaignGridSection />
 
         <footer className="py-8 px-4 bg-gray-900 border-t border-gray-800">
-          <div className="max-w-6xl mx-auto text-center text-sm text-gray-500">
-            <p>© 2026 I:EUM. All rights reserved.</p>
+          <div className="max-w-6xl mx-auto">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <p className="text-sm text-gray-500">© 2026 I:EUM. All rights reserved.</p>
+              <a
+                href="https://www.instagram.com/brand_ieum/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-label="Instagram"
+                >
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+                <span className="text-sm font-medium">@brand_ieum</span>
+              </a>
+            </div>
           </div>
         </footer>
       </div>

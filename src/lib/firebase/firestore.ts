@@ -4,6 +4,10 @@ import { User, UserDocument } from '@/types/user';
 import { Campaign, CampaignDocument, CampaignSpecVersion } from '@/types/campaign';
 import { Application, ApplicationDocument } from '@/types/application';
 import { Submission, SubmissionDocument } from '@/types/submission';
+import { Portfolio, PortfolioDocument } from '@/types/portfolio';
+import { Review, ReviewDocument } from '@/types/review';
+import { Contact, ContactDocument } from '@/types/contact';
+import { Survey, SurveyDocument } from '@/types/survey';
 
 const db = getAdminFirestore();
 
@@ -79,6 +83,30 @@ export async function updateCampaign(campaignId: string, data: Partial<CampaignD
     ...data,
     updatedAt: Timestamp.now(),
   });
+}
+
+export async function deleteCampaign(campaignId: string): Promise<void> {
+  const campaignRef = db.collection('campaigns').doc(campaignId);
+  
+  // 서브컬렉션도 함께 삭제 (batch delete)
+  const batch = db.batch();
+  
+  // 캠페인 문서 삭제
+  batch.delete(campaignRef);
+  
+  // 서브컬렉션 삭제
+  const collections = ['applications', 'submissions', 'specs', 'events'];
+  
+  for (const collectionName of collections) {
+    const subCollectionRef = campaignRef.collection(collectionName);
+    const subSnapshot = await subCollectionRef.get();
+    
+    subSnapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+  }
+  
+  await batch.commit();
 }
 
 // Campaign Specs
@@ -245,5 +273,175 @@ export async function createEvent(data: {
     ...data,
     createdAt: Timestamp.now(),
   });
+}
+
+// Portfolios
+export async function createPortfolio(data: Omit<PortfolioDocument, 'createdAt' | 'updatedAt'>): Promise<string> {
+  const now = Timestamp.now();
+  const ref = await db.collection('portfolios').add({
+    ...data,
+    createdAt: now,
+    updatedAt: now,
+  });
+  return ref.id;
+}
+
+export async function getInfluencerPortfolios(influencerId: string, includePrivate: boolean = false): Promise<Portfolio[]> {
+  let query = db.collection('portfolios')
+    .where('influencerId', '==', influencerId);
+  
+  if (!includePrivate) {
+    query = query.where('isPublic', '==', true) as any;
+  }
+  
+  const snapshot = await query.orderBy('order', 'asc').get();
+  
+  return snapshot.docs.map(doc => {
+    const data = doc.data() as PortfolioDocument;
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: timestampToDate(data.createdAt) || new Date(),
+      updatedAt: timestampToDate(data.updatedAt) || new Date(),
+    };
+  });
+}
+
+export async function updatePortfolio(portfolioId: string, data: Partial<PortfolioDocument>): Promise<void> {
+  await db.collection('portfolios').doc(portfolioId).update({
+    ...data,
+    updatedAt: Timestamp.now(),
+  });
+}
+
+export async function deletePortfolio(portfolioId: string): Promise<void> {
+  await db.collection('portfolios').doc(portfolioId).delete();
+}
+
+// Reviews
+export async function createReview(data: Omit<ReviewDocument, 'createdAt' | 'updatedAt'>): Promise<string> {
+  const now = Timestamp.now();
+  const ref = await db.collection('reviews').add({
+    ...data,
+    createdAt: now,
+    updatedAt: now,
+  });
+  return ref.id;
+}
+
+export async function getCampaignReviews(campaignId: string): Promise<Review[]> {
+  const snapshot = await db.collection('reviews')
+    .where('campaignId', '==', campaignId)
+    .orderBy('createdAt', 'desc')
+    .get();
+  
+  return snapshot.docs.map(doc => {
+    const data = doc.data() as ReviewDocument;
+    const createdAt = timestampToDate(data.createdAt);
+    const updatedAt = timestampToDate(data.updatedAt);
+    return {
+      id: doc.id,
+      campaignId: data.campaignId,
+      influencerId: data.influencerId,
+      advertiserId: data.advertiserId,
+      rating: data.rating,
+      comment: data.comment,
+      createdAt: createdAt || new Date(),
+      updatedAt: updatedAt,
+    };
+  });
+}
+
+export async function getInfluencerReviews(influencerId: string): Promise<Review[]> {
+  const snapshot = await db.collection('reviews')
+    .where('influencerId', '==', influencerId)
+    .orderBy('createdAt', 'desc')
+    .get();
+  
+  return snapshot.docs.map(doc => {
+    const data = doc.data() as ReviewDocument;
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: timestampToDate(data.createdAt) || new Date(),
+      updatedAt: timestampToDate(data.updatedAt),
+    };
+  });
+}
+
+// Contacts
+export async function createContact(data: Omit<ContactDocument, 'createdAt'>): Promise<string> {
+  const now = Timestamp.now();
+  const ref = await db.collection('contacts').add({
+    ...data,
+    createdAt: now,
+  });
+  return ref.id;
+}
+
+export async function getContacts(options?: {
+  status?: string;
+  limit?: number;
+  cursor?: string;
+}): Promise<Contact[]> {
+  const { status, limit = 50, cursor } = options || {};
+  
+  let query: any = db.collection('contacts');
+  
+  // 상태 필터링
+  if (status) {
+    query = query.where('status', '==', status);
+  }
+  
+  // 정렬 및 제한
+  query = query.orderBy('createdAt', 'desc').limit(limit);
+  
+  // 커서 기반 페이지네이션
+  if (cursor) {
+    const cursorDoc = await db.collection('contacts').doc(cursor).get();
+    if (cursorDoc.exists) {
+      query = query.startAfter(cursorDoc);
+    }
+  }
+  
+  const snapshot = await query.get();
+  
+  return snapshot.docs.map(doc => {
+    const data = doc.data() as ContactDocument;
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: timestampToDate(data.createdAt) || new Date(),
+      respondedAt: timestampToDate(data.respondedAt),
+    };
+  });
+}
+
+// Surveys
+export async function createSurvey(data: Omit<SurveyDocument, 'createdAt'>): Promise<string> {
+  const now = Timestamp.now();
+  const ref = await db.collection('surveys').add({
+    ...data,
+    createdAt: now,
+  });
+  return ref.id;
+}
+
+export async function getSurveyByUserId(userId: string): Promise<Survey | null> {
+  const snapshot = await db.collection('surveys')
+    .where('userId', '==', userId)
+    .orderBy('createdAt', 'desc')
+    .limit(1)
+    .get();
+  
+  if (snapshot.empty) return null;
+  
+  const doc = snapshot.docs[0];
+  const data = doc.data() as SurveyDocument;
+  return {
+    id: doc.id,
+    ...data,
+    createdAt: timestampToDate(data.createdAt) || new Date(),
+  };
 }
 

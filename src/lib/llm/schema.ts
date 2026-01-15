@@ -54,6 +54,7 @@ export const RiskFlagSchema = z.object({
 });
 
 export const CampaignSpecSchema = z.object({
+  title: z.string().min(10).max(100).optional(), // 캠페인 제목 (선택사항, 있으면 사용)
   objective: z.string().min(20).max(500),
   target_audience: TargetAudienceSchema,
   tone_and_mood: z.array(z.string()).min(1),

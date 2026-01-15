@@ -14,6 +14,11 @@ export interface MainCampaign {
   channel: Channel;
   deadline: string;
   isHot?: boolean;
+  advertiserName?: string;
+  description?: string;
+  category?: string;
+  imageUrl?: string;
+  applicationsCount?: number;
 }
 
 export interface CampaignStats {

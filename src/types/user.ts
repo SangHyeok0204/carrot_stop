@@ -16,6 +16,10 @@ export interface UserProfile {
   // 광고주용
   companyName?: string;
   handle?: string;    // @핸들명 (예: @cafename)
+  careerYears?: number;      // 경력 년수
+  careerMonths?: number;    // 경력 개월수
+  totalCareerYears?: number; // 총 경력 년수
+  availableHours?: string;   // 연락 가능 시간 (예: "10시 ~ 20시")
 
   // 인플루언서용
   nickname?: string;  // 활동명/닉네임

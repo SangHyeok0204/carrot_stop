@@ -25,11 +25,25 @@ export async function POST(request: NextRequest) {
     // LLM으로 캠페인 생성
     const llmResponse = await generateCampaignSpec(naturalLanguageInput);
 
+    // 제목 추출: specJson.title 우선, 없으면 제안서에서 추출, 없으면 objective 사용
+    let campaignTitle = '';
+    if (llmResponse.specJson.title) {
+      campaignTitle = llmResponse.specJson.title;
+    } else {
+      const titleMatch = llmResponse.proposalMarkdown.match(/^#\s+(.+)$/m);
+      if (titleMatch) {
+        campaignTitle = titleMatch[1];
+      } else {
+        // 최후의 수단: objective를 제목으로 사용 (100자 제한)
+        campaignTitle = llmResponse.specJson.objective.substring(0, 100);
+      }
+    }
+
     // 캠페인 문서 생성
     const campaignId = await createCampaign({
       advertiserId: user.uid,
       status: 'GENERATED',
-      title: llmResponse.specJson.objective.substring(0, 100), // 임시 제목
+      title: campaignTitle,
       naturalLanguageInput: naturalLanguageInput.trim(),
     });
 
@@ -39,14 +53,6 @@ export async function POST(request: NextRequest) {
       specJson: llmResponse.specJson,
       createdBy: user.uid,
     });
-
-    // 캠페인 제목 업데이트 (제안서에서 추출)
-    const titleMatch = llmResponse.proposalMarkdown.match(/^#\s+(.+)$/m);
-    if (titleMatch) {
-      await updateCampaign(campaignId, {
-        title: titleMatch[1],
-      });
-    }
 
     // 일정 정보 업데이트
     const deadlineDate = llmResponse.specJson.schedule.estimated_duration_days 
